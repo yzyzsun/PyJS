@@ -1,0 +1,11 @@
+{
+  "name": "PyJS",
+  "version": "0.1.0",
+  "description": "A naive Python interpreter written in JavaScript",
+  "repository": {
+    "url": "https://github.com/yzyzsun/PyJS.git",
+    "type": "git"
+  },
+  "author": "Sun Yaozhu <yzyzsun@gmail.com>",
+  "license": "MIT"
+}
