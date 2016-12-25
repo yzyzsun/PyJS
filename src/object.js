@@ -2,7 +2,6 @@
 
 class PyObject {
   constructor(type) {
-    this.rc = 0;
     this.type = type;
     this.members = {
       __eq__(self, other) {
@@ -41,6 +40,7 @@ const boolType = new PyTypeObject('bool', []);
 const strType = new PyTypeObject('str', []);
 const listType = new PyTypeObject('list', []);
 const dictType = new PyTypeObject('dict', []);
+const setType = new PyTypeObject('set', []);
 
 class PyBuiltInObject extends PyObject {
   constructor(type, value) {
@@ -328,6 +328,36 @@ class PyDictObject extends PyBuiltInObject {
         for (const item of other) {
           this.__setitem__(self, item[0], item[1]);
         }
+      },
+    };
+    Object.assign(this.members, members);
+  }
+}
+
+class PySetObject extends PyBuiltInObject {
+  constructor(set) {
+    super(setType, set);
+    const members = {
+      __str__(self) {
+        return `{${[...self.values()].join(', ')}}`
+      },
+      __len__(self) {
+        return self.size;
+      },
+      __contains__(self, value) {
+        return self.has(value);
+      },
+      add(self, value) {
+        self.add(value);
+      },
+      clear(self) {
+        self.clear();
+      },
+      copy(self) {
+        return new Set(self);
+      },
+      discard(self, value) {
+        self.delete(value);
       },
     };
     Object.assign(this.members, members);
