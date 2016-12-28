@@ -6,18 +6,20 @@ OCT     [0-7]
 DEC     [0-9]
 HEX     [0-9A-Fa-f]
 EXP     [Ee][+-]?{DEC}+
+SPACE   [ \t]
+NEWLINE \n|\r\n?
 
 %%
-
-0+              return 'DEC_INTEGER';
-[1-9]{DEC}*     return 'DEC_INTEGER';
-0[Bb]{BIN}+     return 'BIN_INTEGER';
-0[Oo]{OCT}+     return 'OCT_INTEGER';
-0[Xx]{HEX}+     return 'HEX_INTEGER';
 
 {DEC}+{EXP}             return 'FLOAT';
 {DEC}+"."{DEC}*{EXP}?   return 'FLOAT';
 {DEC}*"."{DEC}+{EXP}?   return 'FLOAT';
+
+[1-9]{DEC}*     return 'DEC_INTEGER';
+0[Bb]{BIN}+     return 'BIN_INTEGER';
+0[Oo]{OCT}+     return 'OCT_INTEGER';
+0[Xx]{HEX}+     return 'HEX_INTEGER';
+0+              return 'DEC_INTEGER';
 
 \'(\\.|[^\\'])*\'   return 'STRING_LITERAL';
 \"(\\.|[^\\"])*\"   return 'STRING_LITERAL';
@@ -48,57 +50,93 @@ EXP     [Ee][+-]?{DEC}+
 
 {ID}    return 'IDENTIFIER';
 
+"**="   return '**=';
+"//="   return '//=';
+"<<="   return '<<=';
+">>="   return '>>=';
+
 "=="    return '==';
 "!="    return '!=';
-"<"     return '<';
-">"     return '>';
 "<="    return '<=';
 ">="    return '>=';
-
-"+"     return '+';
-"-"     return '-';
-"*"     return '*';
-"/"     return '/';
-"//"    return '//';
-"%"     return '%';
 "**"    return '**';
-"~"     return '~';
-"&"     return '&';
-"^"     return '^';
-"|"     return '|';
+"//"    return '//';
 "<<"    return '<<';
 ">>"    return '>>';
-
-"="     return '=';
 "+="    return '+=';
 "-="    return '-=';
 "*="    return '*=';
 "/="    return '/=';
-"//="   return '//=';
 "%="    return '%=';
-"**="   return '**=';
 "&="    return '&=';
 "^="    return '^=';
 "|="    return '|=';
-"<<="   return '<<=';
-">>="   return '>>=';
 
+"<"     return '<';
+">"     return '>';
+"+"     return '+';
+"-"     return '-';
+"*"     return '*';
+"/"     return '/';
+"%"     return '%';
+"~"     return '~';
+"&"     return '&';
+"^"     return '^';
+"|"     return '|';
+"="     return '=';
 "("     return '(';
 ")"     return ')';
 "["     return '[';
 "]"     return ']';
 "{"     return '{';
 "}"     return '}';
-
 ":"     return ':';
 ","     return ',';
 ";"     return ';';
 "."     return '.';
 "@"     return '@';
 
-<<EOF>>     return 'EOF';
+({NEWLINE}{SPACE}*)+<<EOF>>     {
+                                    var tokens = ['NEWLINE'];
+                                    while (indentStack.pop() !== '') {
+                                        tokens.unshift('DEDENT');
+                                    }
+                                    return tokens;
+                                }
+
+({NEWLINE}{SPACE}*)+/{NEWLINE}  /* skip blank lines */
+
+{NEWLINE}{SPACE}*   {
+                        var current = yytext.replace(/[\r\n]/g, '');
+                        var last = indentStack[indentStack.length - 1];
+                        if (current.startsWith(last)) {
+                            if (current.length > last.length) {
+                                indentStack.push(current);
+                                return ['INDENT', 'NEWLINE'];
+                            }
+                        }
+                        var tokens = ['NEWLINE'];
+                        while (current.length < last.length) {
+                            indentStack.pop();
+                            last = indentStack[indentStack.length - 1];
+                            tokens.unshift('DEDENT');
+                        }
+                        if (current === last) {
+                            return tokens;
+                        } else {
+                            this.parseError(`Indentation on line ${yylineno + 1} does not match any level`, {});
+                        }
+                    }
+
+{SPACE}+    /* skip other whitespace */
+
+%%
+
+indentStack = ['']
 
 /lex
+
+%options token-stack
 
 %left   OR
 %left   AND
@@ -113,7 +151,19 @@ EXP     [Ee][+-]?{DEC}+
 %right  POS NEG '~'
 %right  '**'
 
+%start file_input
+
 %%
+
+file_input
+    : statement_or_newline
+    | file_input statement_or_newline
+    ;
+
+statement_or_newline
+    : statement
+    | NEWLINE
+    ;
 
 statement
     : stmt_list NEWLINE
@@ -178,25 +228,29 @@ expr
     ;
 
 primary
-    : atom
-    | primary '.' IDENTIFIER
-    | primary '[' expression ']'
-    | primary '(' ')'
-    | primary '(' argument_list ')'
-    ;
-
-argument_list
-    : expression
-    | argument_list ',' expression
-    ;
-
-atom
-    : IDENTIFIER
+    : target
     | literal
     | '(' expression_list ')'
     | '[' expression_list ']'
     | '{' expression_list '}'
     | '{' key_datum_list '}'
+    | primary argument_list_enclosure
+    ;
+
+target
+    : IDENTIFIER
+    | primary '.' IDENTIFIER
+    | primary '[' expression ']'
+    ;
+
+argument_list_enclosure
+    : '(' ')'
+    | '(' argument_list ')'
+    ;
+
+argument_list
+    : expression
+    | argument_list ',' expression
     ;
 
 literal
@@ -264,9 +318,26 @@ compound_stmt
     | classdef
     ;
 
+suite
+    : stmt_list NEWLINE
+    | NEWLINE INDENT statements DEDENT
+    ;
+
+statements
+    : statement
+    | statements statement
+    ;
+
 if_stmt
     : IF expression ':' suite
     | IF expression ':' suite ELSE ':' suite
+    | IF expression ':' suite elif_suite
+    | IF expression ':' suite elif_suite ELSE ':' suite
+    ;
+
+elif_suite
+    : ELIF expression ':' suite
+    | elif_suite ELIF expression ':' suite
     ;
 
 while_stmt
@@ -280,32 +351,25 @@ for_stmt
     ;
 
 funcdef
-    : DEF funcname '(' parameter_list ')' ':' suite
-    | decorator DEF funcname '(' parameter_list ')' ':' suite
+    : DEF IDENTIFIER parameter_list_enclosure ':' suite
+    | decorator DEF IDENTIFIER parameter_list_enclosure ':' suite
     ;
 
 decorator
     : '@' IDENTIFIER NEWLINE
     ;
 
-parameter_list
-    : parameter
-    | parameter_list ',' parameter
+parameter_list_enclosure
+    : '(' ')'
+    | '(' parameter_list ')'
     ;
 
-funcname
+parameter_list
     : IDENTIFIER
+    | parameter_list ',' IDENTIFIER
     ;
 
 classdef
-    : CLASS classname ':' suite
-    | CLASS classname inheritance ':' suite
-    ;
-
-inheritance
-    : '(' argument_list ')'
-    ;
-
-classname
-    : IDENTIFIER
+    : CLASS IDENTIFIER ':' suite
+    | CLASS IDENTIFIER '(' argument_list ')' ':' suite
     ;
