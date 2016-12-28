@@ -27,7 +27,7 @@ and_test ::=  not_test | and_test "and" not_test
 not_test ::=  comparison | "not" not_test
 
 comparison    ::=  or_expr ( comp_operator or_expr )*
-comp_operator ::=  "<" | ">" | "==" | ">=" | "<=" | "!=" | "is" ["not"] | ["not"] "in"
+comp_operator ::=  "<" | ">" | "==" | ">=" | "<=" | "!=" | "is" | in"
 
 or_expr  ::=  xor_expr | or_expr "|" xor_expr
 xor_expr ::=  and_expr | xor_expr "^" and_expr
@@ -45,7 +45,7 @@ atom      ::=  identifier | literal | enclosure
 literal   ::=  stringliteral | integer | floatnumber
 enclosure ::=  parenth_form | list_display | set_display | dict_display
 
-parenth_form    ::=  "(" [expression_list] ")"
+parenth_form    ::=  "(" [expression] ")"
 list_display    ::=  "[" [expression_list] "]"
 set_display     ::=  "{" expression_list "}"
 expression_list ::=  expression ( "," expression )*
