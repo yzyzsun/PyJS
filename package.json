@@ -8,7 +8,7 @@
   },
   "author": "Sun Yaozhu <yzyzsun@gmail.com>",
   "license": "MIT",
-  "dependencies": {
+  "devDependencies": {
     "jison": "^0.4.17"
   }
 }

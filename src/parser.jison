@@ -1,3 +1,7 @@
+/**
+ * Created by yzyzsun on 2016/12/23.
+ */
+
 %lex
 
 ID      [A-Za-z_][A-Za-z0-9_]*
