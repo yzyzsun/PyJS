@@ -100,15 +100,13 @@ NEWLINE \n|\r\n?
 "."     return '.';
 "@"     return '@';
 
-({NEWLINE}{SPACE}*)+<<EOF>>     {
-                                    var tokens = ['NEWLINE'];
-                                    while (indentStack.pop() !== '') {
-                                        tokens.unshift('DEDENT');
-                                    }
-                                    return tokens;
-                                }
-
-({NEWLINE}{SPACE}*)+/{NEWLINE}  /* skip blank lines */
+<<EOF>> {
+            var tokens = ['NEWLINE'];
+            while (indentStack.pop() !== '') {
+                tokens.unshift('DEDENT');
+            }
+            return tokens;
+        }
 
 {NEWLINE}{SPACE}*   {
                         var current = yytext.replace(/[\r\n]/g, '');
@@ -160,19 +158,19 @@ indentStack = ['']
 %%
 
 file_input
-    : statement_or_newline
-    | file_input statement_or_newline
-        { $$ = $1.concat($2); }
+    : statements
+        { exports.ast = $1; }
     ;
 
-statement_or_newline
+statements
     : statement
-    | NEWLINE
-        { $$ = []; }
+    | statements statement
+        { $$ = $1.concat($2); }
     ;
 
 statement
     : stmt_list NEWLINE
+    | stmt_list ';' NEWLINE
     | compound_stmt
         { $$ = [$1]; }
     ;
@@ -224,49 +222,49 @@ expr
     | expr IS expr
         { $$ = ['is', $1, $3]; }
     | expr IN expr
-        { $$ = ['call', ['attributeref', $1, '__contains__'], [$3]]; }
+        { $$ = call($1, '__contains__', $3); }
     | expr '==' expr
-        { $$ = ['call', ['attributeref', $1, '__eq__'], [$3]]; }
+        { $$ = call($1, '__eq__', $3); }
     | expr '!=' expr
-        { $$ = ['call', ['attributeref', $1, '__ne__'], [$3]]; }
+        { $$ = call($1, '__ne__', $3); }
     | expr '<' expr
-        { $$ = ['call', ['attributeref', $1, '__lt__'], [$3]]; }
+        { $$ = call($1, '__lt__', $3); }
     | expr '>' expr
-        { $$ = ['call', ['attributeref', $1, '__gt__'], [$3]]; }
+        { $$ = call($1, '__gt__', $3); }
     | expr '<=' expr
-        { $$ = ['call', ['attributeref', $1, '__le__'], [$3]]; }
+        { $$ = call($1, '__le__', $3); }
     | expr '>=' expr
-        { $$ = ['call', ['attributeref', $1, '__ge__'], [$3]]; }
+        { $$ = call($1, '__ge__', $3); }
     | expr '|' expr
-        { $$ = ['call', ['attributeref', $1, '__or__'], [$3]]; }
+        { $$ = call($1, '__or__', $3); }
     | expr '^' expr
-        { $$ = ['call', ['attributeref', $1, '__xor__'], [$3]]; }
+        { $$ = call($1, '__xor__', $3); }
     | expr '&' expr
-        { $$ = ['call', ['attributeref', $1, '__and__'], [$3]]; }
+        { $$ = call($1, '__and__', $3); }
     | expr '<<' expr
-        { $$ = ['call', ['attributeref', $1, '__lshift__'], [$3]]; }
+        { $$ = call($1, '__lshift__', $3); }
     | expr '>>' expr
-        { $$ = ['call', ['attributeref', $1, '__rshift__'], [$3]]; }
+        { $$ = call($1, '__rshift__', $3); }
     | expr '+' expr
-        { $$ = ['call', ['attributeref', $1, '__add__'], [$3]]; }
+        { $$ = call($1, '__add__', $3); }
     | expr '-' expr
-        { $$ = ['call', ['attributeref', $1, '__sub__'], [$3]]; }
+        { $$ = call($1, '__sub__', $3); }
     | expr '*' expr
-        { $$ = ['call', ['attributeref', $1, '__mul__'], [$3]]; }
+        { $$ = call($1, '__mul__', $3); }
     | expr '/' expr
-        { $$ = ['call', ['attributeref', $1, '__truediv__'], [$3]]; }
+        { $$ = call($1, '__truediv__', $3); }
     | expr '//' expr
-        { $$ = ['call', ['attributeref', $1, '__floordiv__'], [$3]]; }
+        { $$ = call($1, '__floordiv__', $3); }
     | expr '%' expr
-        { $$ = ['call', ['attributeref', $1, '__mod__'], [$3]]; }
+        { $$ = call($1, '__mod__', $3); }
     | '+' expr %prec POS
-        { $$ = ['call', ['attributeref', $1, '__pos__'], []]; }
+        { $$ = call($2, '__pos__', null); }
     | '-' expr %prec NEG
-        { $$ = ['call', ['attributeref', $1, '__neg__'], []]; }
+        { $$ = call($2, '__neg__', null); }
     | '~' expr
-        { $$ = ['call', ['attributeref', $1, '__invert__'], []]; }
+        { $$ = call($2, '__invert__', null); }
     | expr '**' expr
-        { $$ = ['call', ['attributeref', $1, '__pow__'], [$3]]; }
+        { $$ = call($1, '__pow__', $3); }
     ;
 
 primary
@@ -286,7 +284,7 @@ primary
 
 target
     : identifier
-    | primary '.' IDENTIFIER
+    | primary '.' identifier
         { $$ = ['attributeref', $1, $3]; }
     | primary '[' expression ']'
         { $$ = ['subscription', $1, $3]; }
@@ -355,29 +353,29 @@ assignment_stmt
 
 augmented_assignment_stmt
     : target '+=' expression
-        { $$ = ['call', ['attributeref', $1, '__iadd__'], [$3]]; }
+        { $$ = call($1, '__iadd__', $3); }
     | target '-=' expression
-        { $$ = ['call', ['attributeref', $1, '__isub__'], [$3]]; }
+        { $$ = call($1, '__isub__', $3); }
     | target '*=' expression
-        { $$ = ['call', ['attributeref', $1, '__imul__'], [$3]]; }
+        { $$ = call($1, '__imul__', $3); }
     | target '/=' expression
-        { $$ = ['call', ['attributeref', $1, '__itruediv__'], [$3]]; }
+        { $$ = call($1, '__itruediv__', $3); }
     | target '//=' expression
-        { $$ = ['call', ['attributeref', $1, '__ifloordiv__'], [$3]]; }
+        { $$ = call($1, '__ifloordiv__', $3); }
     | target '%=' expression
-        { $$ = ['call', ['attributeref', $1, '__imod__'], [$3]]; }
+        { $$ = call($1, '__imod__', $3); }
     | target '**=' expression
-        { $$ = ['call', ['attributeref', $1, '__ipow__'], [$3]]; }
+        { $$ = call($1, '__ipow__', $3); }
     | target '<<=' expression
-        { $$ = ['call', ['attributeref', $1, '__ilshift__'], [$3]]; }
+        { $$ = call($1, '__ilshift__', $3); }
     | target '>>=' expression
-        { $$ = ['call', ['attributeref', $1, '__irshift__'], [$3]]; }
+        { $$ = call($1, '__irshift__', $3); }
     | target '&=' expression
-        { $$ = ['call', ['attributeref', $1, '__iand__'], [$3]]; }
+        { $$ = call($1, '__iand__', $3); }
     | target '^=' expression
-        { $$ = ['call', ['attributeref', $1, '__ixor__'], [$3]]; }
+        { $$ = call($1, '__ixor__', $3); }
     | target '|=' expression
-        { $$ = ['call', ['attributeref', $1, '__ior__'], [$3]]; }
+        { $$ = call($1, '__ior__', $3); }
     ;
 
 return_stmt
@@ -415,13 +413,6 @@ suite
         { $$ = $3; }
     ;
 
-statements
-    : statement
-        { $$ = [$1]; }
-    | statements statement
-        { $$ = $1; $$.push($2); }
-    ;
-
 if_stmt
     : IF expression ':' suite
         { $$ = ['if', $2, $4, [], []]; }
@@ -456,9 +447,9 @@ for_stmt
 
 funcdef
     : DEF identifier parameter_list_enclosure ':' suite
-        { $$ = ['def', null, $2, $3, $5]; }
+        { $$ = ['def', $2, $3, $5, null]; }
     | decorator DEF identifier parameter_list_enclosure ':' suite
-        { $$ = ['def', $1, $3, $4, $6]; }
+        { $$ = ['def', $3, $4, $6, $1]; }
     ;
 
 decorator
@@ -491,14 +482,19 @@ classdef
 
 function parseString(str) {
     return str.slice(1, -1)
-              .replace('\\\n', '')
-              .replace('\\\\', '\\')
-              .replace("\\'", "'")
-              .replace('\\"', '"')
-              .replace('\\b', '\b')
-              .replace('\\f', '\f')
-              .replace('\\n', '\n')
-              .replace('\\r', '\r')
-              .replace('\\t', '\t')
-              .replace('\\v', '\v');
+              .replace(/\\\n/g, '')
+              .replace(/\\\\/g, '\\')
+              .replace(/\\'/g, "'")
+              .replace(/\\"/g, '"')
+              .replace(/\\b/g, '\b')
+              .replace(/\\f/g, '\f')
+              .replace(/\\n/g, '\n')
+              .replace(/\\r/g, '\r')
+              .replace(/\\t/g, '\t')
+              .replace(/\\v/g, '\v');
+}
+
+function call(object, method, argument) {
+    var argv = argument === null ? [] : [argument];
+    return ['call', ['attributeref', object, ['identifier', method]], argv];
 }

@@ -45,6 +45,7 @@ const strType = new PyTypeObject('str', []);
 const listType = new PyTypeObject('list', []);
 const dictType = new PyTypeObject('dict', []);
 const setType = new PyTypeObject('set', []);
+const noneType = new PyTypeObject('NoneType', []);
 
 class PyBuiltInObject extends PyObject {
   constructor(type, value) {
@@ -52,6 +53,9 @@ class PyBuiltInObject extends PyObject {
     this.value = value;
   }
 }
+
+const noneObject = new PyBuiltInObject(noneType, null);
+Object.assign(noneObject.members, { __str__(self) { return 'None'; } });
 
 class PyNumericObject extends PyBuiltInObject {
   constructor(type, value) {
