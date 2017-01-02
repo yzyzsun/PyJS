@@ -23,7 +23,7 @@ exports.interpreter = {
         let car = expr[0] === null ? '' : expr[0] + '';
         const cdr = expr.slice(1);
         switch (car) {
-        case 'list': case 'global': case 'nonlocal':
+        case 'list':
           cdr[0].unshift(null);
           break;
         case 'if':

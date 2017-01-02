@@ -9,14 +9,11 @@ stmt_list     ::=  simple_stmt (";" simple_stmt)* [;]
 
 simple_stmt ::=  expression_stmt
                  | assignment_stmt
-                 | augmented_assignment_stmt
                  | pass_stmt
                  | del_stmt
                  | return_stmt
                  | break_stmt
                  | continue_stmt
-                 | global_stmt
-                 | nonlocal_stmt
 
 expression_stmt        ::=  expression
 expression             ::=  conditional_expression
@@ -92,15 +89,11 @@ argument_list ::=  expression ("," expression)*
 
 target          ::=  identifier | attributeref | subscription
 assignment_stmt ::=  (target "=")+ expression
-augmented_assignment_stmt ::=  target augop expression
-augop ::=  "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**=" | ">>=" | "<<=" | "&=" | "^=" | "|="
 pass_stmt       ::=  "pass"
 del_stmt        ::=  "del" target
 return_stmt     ::=  "return" [expression]
 break_stmt      ::=  "break"
 continue_stmt   ::=  "continue"
-global_stmt     ::=  "global" identifier ("," identifier)*
-nonlocal_stmt   ::=  "nonlocal" identifier ("," identifier)*
 
 
 compound_stmt ::=  if_stmt | while_stmt | for_stmt | funcdef | classdef
@@ -116,8 +109,7 @@ while_stmt ::=  "while" expression ":" suite
 for_stmt ::=  "for" target "in" expression ":" suite
               ["else" ":" suite]
 
-funcdef        ::=  [decorator] "def" funcname "(" [parameter_list] ")" ":" suite
-decorator      ::=  "@" identifier NEWLINE
+funcdef        ::=  "def" funcname "(" [parameter_list] ")" ":" suite
 parameter_list ::=  parameter ("," parameter)*
 parameter      ::=  identifier
 funcname       ::=  identifier

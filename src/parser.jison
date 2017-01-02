@@ -41,11 +41,9 @@ NEWLINE \n|\r\n?
 "elif"      return 'ELIF';
 "else"      return 'ELSE';
 "for"       return 'FOR';
-"global"    return 'GLOBAL';
 "if"        return 'IF';
 "in"        return 'IN';
 "is"        return 'IS';
-"nonlocal"  return 'NONLOCAL';
 "not"       return 'NOT';
 "or"        return 'OR';
 "pass"      return 'PASS';
@@ -98,7 +96,6 @@ NEWLINE \n|\r\n?
 ","     return ',';
 ";"     return ';';
 "."     return '.';
-"@"     return '@';
 
 <<EOF>> {
             var tokens = ['NEWLINE'];
@@ -185,7 +182,6 @@ stmt_list
 simple_stmt
     : expression_stmt
     | assignment_stmt
-    | augmented_assignment_stmt
     | PASS
         { $$ = ['pass']; }
     | DEL target
@@ -195,10 +191,6 @@ simple_stmt
         { $$ = ['break']; }
     | CONTINUE
         { $$ = ['continue']; }
-    | GLOBAL global_list
-        { $$ = ['global', $2]; }
-    | NONLOCAL nonlocal_list
-        { $$ = ['nonlocal', $2]; }
     ;
 
 expression_stmt
@@ -222,62 +214,57 @@ expr
     | expr IS expr
         { $$ = ['is', $1, $3]; }
     | expr IN expr
-        { $$ = call($1, '__contains__', $3); }
+        { $$ = call($1, '__contains__', [$3]); }
     | expr '==' expr
-        { $$ = call($1, '__eq__', $3); }
+        { $$ = call($1, '__eq__', [$3]); }
     | expr '!=' expr
-        { $$ = call($1, '__ne__', $3); }
+        { $$ = call($1, '__ne__', [$3]); }
     | expr '<' expr
-        { $$ = call($1, '__lt__', $3); }
+        { $$ = call($1, '__lt__', [$3]); }
     | expr '>' expr
-        { $$ = call($1, '__gt__', $3); }
+        { $$ = call($1, '__gt__', [$3]); }
     | expr '<=' expr
-        { $$ = call($1, '__le__', $3); }
+        { $$ = call($1, '__le__', [$3]); }
     | expr '>=' expr
-        { $$ = call($1, '__ge__', $3); }
+        { $$ = call($1, '__ge__', [$3]); }
     | expr '|' expr
-        { $$ = call($1, '__or__', $3); }
+        { $$ = call($1, '__or__', [$3]); }
     | expr '^' expr
-        { $$ = call($1, '__xor__', $3); }
+        { $$ = call($1, '__xor__', [$3]); }
     | expr '&' expr
-        { $$ = call($1, '__and__', $3); }
+        { $$ = call($1, '__and__', [$3]); }
     | expr '<<' expr
-        { $$ = call($1, '__lshift__', $3); }
+        { $$ = call($1, '__lshift__', [$3]); }
     | expr '>>' expr
-        { $$ = call($1, '__rshift__', $3); }
+        { $$ = call($1, '__rshift__', [$3]); }
     | expr '+' expr
-        { $$ = call($1, '__add__', $3); }
+        { $$ = call($1, '__add__', [$3]); }
     | expr '-' expr
-        { $$ = call($1, '__sub__', $3); }
+        { $$ = call($1, '__sub__', [$3]); }
     | expr '*' expr
-        { $$ = call($1, '__mul__', $3); }
+        { $$ = call($1, '__mul__', [$3]); }
     | expr '/' expr
-        { $$ = call($1, '__truediv__', $3); }
+        { $$ = call($1, '__truediv__', [$3]); }
     | expr '//' expr
-        { $$ = call($1, '__floordiv__', $3); }
+        { $$ = call($1, '__floordiv__', [$3]); }
     | expr '%' expr
-        { $$ = call($1, '__mod__', $3); }
+        { $$ = call($1, '__mod__', [$3]); }
     | '+' expr %prec POS
-        { $$ = call($2, '__pos__', null); }
+        { $$ = call($2, '__pos__', []); }
     | '-' expr %prec NEG
-        { $$ = call($2, '__neg__', null); }
+        { $$ = call($2, '__neg__', []); }
     | '~' expr
-        { $$ = call($2, '__invert__', null); }
+        { $$ = call($2, '__invert__', []); }
     | expr '**' expr
-        { $$ = call($1, '__pow__', $3); }
+        { $$ = call($1, '__pow__', [$3]); }
     ;
 
 primary
     : target
+        { $$ = ['primary', $1]; }
     | literal
     | '(' expression ')'
         { $$ = $2; }
-    | '[' expression_list ']'
-        { $$ = ['list', $2]; }
-    | '{' expression_list '}'
-        { $$ = ['set', new Set($2)]; }
-    | '{' key_datum_list '}'
-        { $$ = ['dict', new Map($2)]; }
     | primary argument_list_enclosure
         { $$ = ['call', $1, $2]; }
     ;
@@ -328,6 +315,12 @@ literal
         { $$ = ['bool', false]; }
     | NONE
         { $$ = ['NoneType', null]; }
+    | '[' expression_list ']'
+        { $$ = ['list', $2]; }
+    | '{' expression_list '}'
+        { $$ = ['set', new Set($2)]; }
+    | '{' key_datum_list '}'
+        { $$ = ['dict', new Map($2)]; }
     ;
 
 expression_list
@@ -351,52 +344,11 @@ assignment_stmt
         { $$ = ['assign', $1, $3]; }
     ;
 
-augmented_assignment_stmt
-    : target '+=' expression
-        { $$ = call($1, '__iadd__', $3); }
-    | target '-=' expression
-        { $$ = call($1, '__isub__', $3); }
-    | target '*=' expression
-        { $$ = call($1, '__imul__', $3); }
-    | target '/=' expression
-        { $$ = call($1, '__itruediv__', $3); }
-    | target '//=' expression
-        { $$ = call($1, '__ifloordiv__', $3); }
-    | target '%=' expression
-        { $$ = call($1, '__imod__', $3); }
-    | target '**=' expression
-        { $$ = call($1, '__ipow__', $3); }
-    | target '<<=' expression
-        { $$ = call($1, '__ilshift__', $3); }
-    | target '>>=' expression
-        { $$ = call($1, '__irshift__', $3); }
-    | target '&=' expression
-        { $$ = call($1, '__iand__', $3); }
-    | target '^=' expression
-        { $$ = call($1, '__ixor__', $3); }
-    | target '|=' expression
-        { $$ = call($1, '__ior__', $3); }
-    ;
-
 return_stmt
     : RETURN
         { $$ = ['return', null]; }
     | RETURN expression
         { $$ = ['return', $2]; }
-    ;
-
-global_list
-    : identifier
-        { $$ = [$1]; }
-    | global_list ',' identifier
-        { $$ = $1; $$.push($3); }
-    ;
-
-nonlocal_list
-    : identifier
-        { $$ = [$1]; }
-    | nonlocal_list ',' identifier
-        { $$ = $1; $$.push($3); }
     ;
 
 compound_stmt
@@ -447,14 +399,7 @@ for_stmt
 
 funcdef
     : DEF identifier parameter_list_enclosure ':' suite
-        { $$ = ['def', $2, $3, $5, null]; }
-    | decorator DEF identifier parameter_list_enclosure ':' suite
-        { $$ = ['def', $3, $4, $6, $1]; }
-    ;
-
-decorator
-    : '@' identifier NEWLINE
-        { $$ = $2; }
+        { $$ = ['def', $2, $3, $5]; }
     ;
 
 parameter_list_enclosure
@@ -494,7 +439,7 @@ function parseString(str) {
               .replace(/\\v/g, '\v');
 }
 
-function call(object, method, argument) {
-    var argv = argument === null ? [] : [argument];
-    return ['call', ['attributeref', object, ['identifier', method]], argv];
+function call(object, method, argv) {
+    return ['call', ['primary', ['attributeref', object, ['identifier', method]]], argv];
 }
+exports.call = call;
