@@ -13,7 +13,7 @@ class PyObject {
     if (this.members.has(identifier)) {
       return this.members.get(identifier);
     } else {
-      return this.type.members.get(identifier);
+      return this.type.get(identifier);
     }
   }
   set(identifier) {
@@ -34,10 +34,9 @@ class PyTypeObject extends PyObject {
     if (this.members.has(identifier)) {
       return this.members.get(identifier);
     }
-    for (const base of bases) {
-      if (base.members.has(identifier)) {
-        return base.members.get(identifier);
-      }
+    for (const base of this.bases) {
+      const member = base.get(identifier);
+      if (member !== undefined) return member;
     }
     return undefined;
   }
