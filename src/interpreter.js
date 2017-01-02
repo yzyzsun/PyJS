@@ -122,8 +122,21 @@ exports.interpreter = {
         let argv = expr[2].map(x => exec(x));
         if (typeof func === 'function') {
           const ret = func(argv.map(x => x.value));
-          // TODO: properly wrap native value to PyBuiltinObject
-          return wrap(ret);
+          if (typeof ret === 'boolean') {
+            return exec(['bool', ret]);
+          } else if (typeof ret === 'number') {
+            return ret % 1 === 0 ? exec(['int', ret]) : exec(['float', ret]);
+          } else if (typeof ret === 'string') {
+            return exec(['str', ret]);
+          } else if (ret instanceof Array) {
+            return exec(['list', ret]);
+          } else if (ret instanceof Map) {
+            return exec(['dict', ret]);
+          } else if (ret instanceof Set) {
+            return exec(['set', ret]);
+          } else {
+            return noneObject;
+          }
         } else if (func instanceof PyFunctionObject) {
           const params = func.parameters;
           if (func.hasOwnProperty('object')) argv.unshift(func.object);

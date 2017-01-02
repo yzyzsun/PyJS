@@ -90,8 +90,7 @@ class PyIntObject extends PyBuiltinObject {
 }
 
 const floatType = new PyTypeObject('float', [numericType]);
-floatType.members.set('__str__', self => self % 1 === 0 ? self.toFixed(1) : self.toString());
-floatType.members.set('is_integer', self => self % 1 === 0);
+floatType.members.set('__str__', self => self.toString());
 class PyFloatObject extends PyBuiltinObject {
   constructor(float) {
     super(floatType, float);
