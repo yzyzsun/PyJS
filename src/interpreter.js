@@ -332,6 +332,7 @@ exports.interpreter = {
       }
     };
     
+    this.output = '';
     this.parse(source);
     for (const stmt of this.ast) exec(stmt);
   },

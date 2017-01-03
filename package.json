@@ -1,13 +1,15 @@
 {
   "name": "PyJS",
   "version": "0.1.0",
-  "description": "A naive Python interpreter written in JavaScript",
+  "description": "A minimal Python interpreter written in JavaScript",
   "repository": {
     "url": "https://github.com/yzyzsun/PyJS.git",
     "type": "git"
   },
   "author": "Sun Yaozhu <yzyzsun@gmail.com>",
   "license": "MIT",
+  "main": "src/interpreter.js",
+  "bin": "src/cli.js",
   "devDependencies": {
     "jison": "^0.4.17"
   }
