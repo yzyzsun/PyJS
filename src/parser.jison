@@ -200,17 +200,17 @@ expression_stmt
 expression
     : expr
     | expr IF expr ELSE expression
-        { $$ = ['conditional', $3, $1, $5]; }
+        { $$ = ['conditional', ['truth', $3], $1, $5]; }
     ;
 
 expr
     : primary
     | expr OR expr
-        { $$ = ['or', $1, $3]; }
+        { $$ = ['or', ['truth', $1], ['truth', $3]]; }
     | expr AND expr
-        { $$ = ['and', $1, $3]; }
+        { $$ = ['and', ['truth', $1], ['truth', $3]]; }
     | NOT expr
-        { $$ = ['not', $2]; }
+        { $$ = ['not', ['truth', $2]]; }
     | expr IS expr
         { $$ = ['is', $1, $3]; }
     | expr IN expr
@@ -318,9 +318,9 @@ literal
     | '[' expression_list ']'
         { $$ = ['list', $2]; }
     | '{' expression_list '}'
-        { $$ = ['set', new Set($2)]; }
+        { $$ = ['set', $2]; }
     | '{' key_datum_list '}'
-        { $$ = ['dict', new Map($2)]; }
+        { $$ = ['dict', $2]; }
     ;
 
 expression_list
@@ -367,27 +367,27 @@ suite
 
 if_stmt
     : IF expression ':' suite
-        { $$ = ['if', $2, $4, [], []]; }
+        { $$ = ['if', ['truth', $2], $4, [], []]; }
     | IF expression ':' suite ELSE ':' suite
-        { $$ = ['if', $2, $4, [], $7]; }
+        { $$ = ['if', ['truth', $2], $4, [], $7]; }
     | IF expression ':' suite elif_suite
-        { $$ = ['if', $2, $4, $5, []]; }
+        { $$ = ['if', ['truth', $2], $4, $5, []]; }
     | IF expression ':' suite elif_suite ELSE ':' suite
-        { $$ = ['if', $2, $4, $5, $8]; }
+        { $$ = ['if', ['truth', $2], $4, $5, $8]; }
     ;
 
 elif_suite
     : ELIF expression ':' suite
-        { $$ = [['elif', $2, $4]]; }
+        { $$ = [['elif', ['truth', $2], $4]]; }
     | elif_suite ELIF expression ':' suite
-        { $$ = $1; $$.push(['elif', $3, $5]); }
+        { $$ = $1; $$.push(['elif', ['truth', $3], $5]); }
     ;
 
 while_stmt
     : WHILE expression ':' suite
-        { $$ = ['while', $2, $4, []]; }
+        { $$ = ['while', ['truth', $2], $4, []]; }
     | WHILE expression ':' suite ELSE ':' suite
-        { $$ = ['while', $2, $4, $7]; }
+        { $$ = ['while', ['truth', $2], $4, $7]; }
     ;
 
 for_stmt

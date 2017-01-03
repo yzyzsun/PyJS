@@ -16,7 +16,7 @@ class PyObject {
       return this.type.get(identifier);
     }
   }
-  set(identifier) {
+  set(identifier, value) {
     this.members.set(identifier, value);
   }
   delete(identifier) {
@@ -206,7 +206,7 @@ class PyFunctionObject extends PyObject {
     return this.locals.has(identifier);
   }
   get(identifier) {
-    this.locals.get(identifier);
+    return this.locals.get(identifier);
   }
   set(identifier, value) {
     this.locals.set(identifier, value);

@@ -38,6 +38,7 @@ exports.interpreter = {
     let continueFlag = false;
     
     const exec = expr => {
+      if (!(expr instanceof Array)) return expr;
       switch (expr[0]) {
       case 'identifier':
         return {
@@ -72,11 +73,11 @@ exports.interpreter = {
       case 'str':
         return new PyStrObject(expr[1]);
       case 'list':
-        return new PyListObject(expr[1]);
+        return new PyListObject(expr[1].map(exec));
       case 'dict':
-        return new PyDictObject(expr[1]);
+        return new PyDictObject(new Map(expr[1].map(x => [exec(x[0]), exec(x[1])])));
       case 'set':
-        return new PySetObject(expr[1]);
+        return new PySetObject(new Set(expr[1].map(exec)));
       case 'NoneType':
         return noneObject;
       case 'attributeref': {
@@ -88,7 +89,9 @@ exports.interpreter = {
             if (typeof attribute === 'function') {
               return attribute.bind(null, primary.value);
             } else if (attribute instanceof PyFunctionObject) {
-              return Object.assign({object: primary}, attribute);
+              const func = new PyFunctionObject(attribute.funcname, attribute.parameters, attribute.statements);
+              func.object = primary;
+              return func;
             } else if (attribute !== undefined) {
               return attribute;
             } else {
@@ -118,10 +121,10 @@ exports.interpreter = {
           },
         };
       case 'call': {
-        let func = exec(expr[1]);
+        let callable = exec(expr[1]);
         let argv = expr[2].map(x => exec(x));
-        if (typeof func === 'function') {
-          const ret = func(argv.map(x => x.value));
+        if (typeof callable === 'function') {
+          const ret = callable(...argv.map(x => x.value));
           if (typeof ret === 'boolean') {
             return exec(['bool', ret]);
           } else if (typeof ret === 'number') {
@@ -137,40 +140,45 @@ exports.interpreter = {
           } else {
             return noneObject;
           }
-        } else if (func instanceof PyFunctionObject) {
-          const params = func.parameters;
-          if (func.hasOwnProperty('object')) argv.unshift(func.object);
+        } else if (callable instanceof PyFunctionObject) {
+          const params = callable.parameters;
+          if (callable.hasOwnProperty('object')) argv.unshift(callable.object);
           if (params.length !== argv.length) {
-            throw new TypeError(`${func.funcname}() take ${params.length} arguments but ${argv.length} was given`);
+            throw new TypeError(`${callable.funcname}() take ${params.length} arguments but ${argv.length} was given`);
           }
-          func.locals = new Map();
-          for (const i = 0; i < params.length; i++) {
-            func.locals.set(params[i], argv[i]);
+          callable.locals = new Map();
+          for (let i = 0; i < params.length; i++) {
+            callable.locals.set(params[i], argv[i]);
           }
           const oldObject = object;
-          object = func;
-          for (const stmt of func.statements) exec(stmt);
+          object = callable;
+          for (const stmt of callable.statements) exec(stmt);
           object = oldObject;
           const ret = returnValue;
           returnValue = noneObject;
           return ret;
+        } else if (callable instanceof PyTypeObject) {
+          const obj = new PyObject(callable);
+          exec(require('./parser').call(obj, '__init__', argv));
+          return obj;
         } else {
-          throw new TypeError(`'${func.type.name}' object is not callable`);
+          throw new TypeError(`'${callable.type.name}' object is not callable`);
         }
       }
       case 'truth': {
-        const boolFunc = expr[1].get('__bool__');
+        const operand = exec(expr[1]);
+        const boolFunc = operand.get('__bool__');
         if (boolFunc !== undefined) {
-          const bool = exec(['call', boolFunc, [expr[1]]]);
+          const bool = exec(['call', boolFunc, [operand]]);
           if (bool.type.name === 'bool') {
             return bool;
           } else {
             throw new TypeError(`__bool__ should return bool, returned ${bool.type.name}`);
           }
         }
-        const lenFunc = expr[1].get('__len__');
+        const lenFunc = operand.get('__len__');
         if (lenFunc !== undefined) {
-          const len = exec(['call', lenFunc, [expr[1]]]);
+          const len = exec(['call', lenFunc, [operand]]);
           if (len === 0) {
             return falseObject;
           } else {
@@ -180,12 +188,12 @@ exports.interpreter = {
         return trueObject;
       }
       case 'not': {
-        const truth = exec(['truth', exec(expr[1])]);
+        const truth = exec(expr[1]);
         return truth === trueObject ? falseObject : trueObject;
       }
       case 'and': {
         const left = exec(expr[1]);
-        if (exec(['truth', left]) === falseObject) {
+        if (left === falseObject) {
           return left;
         } else {
           return exec(expr[2]);
@@ -193,7 +201,7 @@ exports.interpreter = {
       }
       case 'or': {
         const left = exec(expr[1]);
-        if (exec(['truth', left]) === trueObject) {
+        if (left === trueObject) {
           return left;
         } else {
           return exec(expr[2]);
@@ -291,7 +299,7 @@ exports.interpreter = {
       }
       case 'while':
         loopFlag = elseFlag = true;
-        while (exec(['truth', exec(expr[1])])) {
+        while (exec(expr[1]) === trueObject) {
           for (const stmt of expr[2]) {
             exec(stmt);
             if (continueFlag || breakFlag) break;
@@ -309,12 +317,12 @@ exports.interpreter = {
         }
         return;
       case 'if':
-        if (exec(['truth', exec(expr[1])]) === trueObject) {
+        if (exec(expr[1]) === trueObject) {
           for (const stmt of expr[2]) exec(stmt);
           return;
         }
         for (const elif of expr[3]) {
-          if (exec(['truth', exec(elif[1])]) === trueObject) {
+          if (exec(elif[1]) === trueObject) {
             for (const stmt of elif[2]) exec(stmt);
             return;
           }
@@ -329,7 +337,7 @@ exports.interpreter = {
   },
   
   toString() {
-    const displayExpr = expr => {
+    const display = expr => {
       if (expr instanceof Array) {
         if (expr.length == 0) return '()';
         let car = expr[0] === null ? '' : expr[0] + '';
@@ -352,7 +360,7 @@ exports.interpreter = {
           break;
         }
         if (car.length > 0 && cdr.length > 0) car += ' ';
-        return `(${car}${cdr.map(displayExpr).join(' ')})`;
+        return `(${car}${cdr.map(display).join(' ')})`;
       } else {
         if (expr === null) {
           return 'null';
@@ -366,7 +374,7 @@ exports.interpreter = {
     if (typeof this.ast === 'undefined') {
       return undefined;
     } else {
-      return this.ast.map(displayExpr).join('\n');
+      return this.ast.map(display).join('\n');
     }
   },
 };
