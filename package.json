@@ -10,7 +10,20 @@
   "license": "MIT",
   "main": "src/interpreter.js",
   "bin": "src/cli.js",
+  "scripts": {
+    "prepublish": "cd src && jison parser.jison",
+    "build": "npm run prepublish && webpack"
+  },
   "devDependencies": {
-    "jison": "^0.4.17"
+    "babel-core": "^6.21.0",
+    "babel-loader": "^6.2.10",
+    "babel-preset-latest": "^6.16.0",
+    "codemirror": "^5.22.0",
+    "css-loader": "^0.26.1",
+    "jison": "^0.4.17",
+    "raw-loader": "^0.5.1",
+    "skeleton-css": "^2.0.4",
+    "style-loader": "^0.13.1",
+    "webpack": "^1.14.0"
   }
 }
