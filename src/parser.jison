@@ -52,11 +52,6 @@ NEWLINE \n|\r\n?
 
 {ID}    return 'IDENTIFIER';
 
-"**="   return '**=';
-"//="   return '//=';
-"<<="   return '<<=';
-">>="   return '>>=';
-
 "=="    return '==';
 "!="    return '!=';
 "<="    return '<=';
@@ -65,14 +60,6 @@ NEWLINE \n|\r\n?
 "//"    return '//';
 "<<"    return '<<';
 ">>"    return '>>';
-"+="    return '+=';
-"-="    return '-=';
-"*="    return '*=';
-"/="    return '/=';
-"%="    return '%=';
-"&="    return '&=';
-"^="    return '^=';
-"|="    return '|=';
 
 "<"     return '<';
 ">"     return '>';
@@ -102,6 +89,7 @@ NEWLINE \n|\r\n?
             while (indentStack.pop() !== '') {
                 tokens.unshift('DEDENT');
             }
+            indentStack.push('');
             return tokens;
         }
 
@@ -123,7 +111,8 @@ NEWLINE \n|\r\n?
                         if (current === last) {
                             return tokens;
                         } else {
-                            this.parseError(`Indentation on line ${yylineno + 1} does not match any level`, {});
+                            var line = yylineno + 1;
+                            this.parseError('Indentation on line ' + line + ' does not match any level', {});
                         }
                     }
 
@@ -131,7 +120,7 @@ NEWLINE \n|\r\n?
 
 %%
 
-indentStack = ['']
+var indentStack = [''];
 
 /lex
 
