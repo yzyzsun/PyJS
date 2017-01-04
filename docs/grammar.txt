@@ -4,8 +4,8 @@ file_input        ::=  (NEWLINE | statement)*
 interactive_input ::=  [stmt_list] NEWLINE | compound_stmt NEWLINE
 eval_input        ::=  expression NEWLINE*
 
-statement     ::=  stmt_list NEWLINE | compound_stmt
-stmt_list     ::=  simple_stmt (";" simple_stmt)* [;]
+statement ::=  stmt_list NEWLINE | compound_stmt
+stmt_list ::=  simple_stmt (";" simple_stmt)* [;]
 
 simple_stmt ::=  expression_stmt
                  | assignment_stmt
