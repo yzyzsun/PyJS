@@ -92,7 +92,7 @@ elif score >= 70 and not teacher_angry:
 elif score >= 60 and not teacher_angry:
 	grade = 'D'
 else:
-	grade = 'E'
+	grade = 'F'
 print('Grade is ' + grade)
 
 a = 5
