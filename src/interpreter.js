@@ -19,7 +19,7 @@ exports.interpreter = {
   interpret(source) {
     const {
       PyObject, PyTypeObject, PyFunctionObject,
-      PyBuiltinObject, PyIntObject, PyFloatObject, PyStrObject, PyListObject, PyDictObject, PySetObject,
+      PyBuiltinObject, PyIntObject, PyBoolObject, PyFloatObject, PyStrObject, PyListObject, PyDictObject, PySetObject,
       noneObject, falseObject, trueObject,
     } = require('./object');
     const {
@@ -28,6 +28,7 @@ exports.interpreter = {
     
     // TODO: form built-in map
     const builtins = new Map();
+    builtins.set('print', x => this.output += x.get('__str__')(x).value + '\n');
     const globals = new Map();
     let object = globals;
     let returnValue = noneObject;
@@ -69,7 +70,7 @@ exports.interpreter = {
       case 'float':
         return new PyFloatObject(expr[1]);
       case 'bool':
-        return expr[1] ? trueObject : falseObject;
+        return PyBoolObject(expr[1]);
       case 'str':
         return new PyStrObject(expr[1]);
       case 'list':
@@ -87,7 +88,7 @@ exports.interpreter = {
           get() {
             const attribute = primary.get(identifier);
             if (typeof attribute === 'function') {
-              return attribute.bind(null, primary.value);
+              return attribute.bind(null, primary);
             } else if (attribute instanceof PyFunctionObject) {
               const func = new PyFunctionObject(attribute.funcname, attribute.parameters, attribute.statements);
               func.object = primary;
@@ -124,22 +125,7 @@ exports.interpreter = {
         let callable = exec(expr[1]);
         let argv = expr[2].map(x => exec(x));
         if (typeof callable === 'function') {
-          const ret = callable(...argv.map(x => x.value));
-          if (typeof ret === 'boolean') {
-            return exec(['bool', ret]);
-          } else if (typeof ret === 'number') {
-            return ret % 1 === 0 ? exec(['int', ret]) : exec(['float', ret]);
-          } else if (typeof ret === 'string') {
-            return exec(['str', ret]);
-          } else if (ret instanceof Array) {
-            return exec(['list', ret]);
-          } else if (ret instanceof Map) {
-            return exec(['dict', ret]);
-          } else if (ret instanceof Set) {
-            return exec(['set', ret]);
-          } else {
-            return noneObject;
-          }
+          return callable(...argv);
         } else if (callable instanceof PyFunctionObject) {
           const params = callable.parameters;
           if (callable.hasOwnProperty('object')) argv.unshift(callable.object);
@@ -179,17 +165,13 @@ exports.interpreter = {
         const lenFunc = operand.get('__len__');
         if (lenFunc !== undefined) {
           const len = exec(['call', lenFunc, [operand]]);
-          if (len === 0) {
-            return falseObject;
-          } else {
-            return trueObject;
-          }
+          return PyBoolObject(len !== 0);
         }
         return trueObject;
       }
       case 'not': {
         const truth = exec(expr[1]);
-        return truth === trueObject ? falseObject : trueObject;
+        return PyBoolObject(truth === falseObject);
       }
       case 'and': {
         const left = exec(expr[1]);
@@ -275,7 +257,9 @@ exports.interpreter = {
         loopFlag = elseFlag = true;
         if (iterable instanceof PyStrObject || iterable instanceof PyListObject ||
             iterable instanceof PyDictObject || iterable instanceof PySetObject) {
-          for (const item of iterable.value) {
+          for (let item of iterable.value) {
+            if (typeof item === 'string') item = new PyStrObject(item);
+            else if (item instanceof Array) item = item[0];
             iterator.set(item);
             for (const stmt of expr[3]) {
               exec(stmt);
