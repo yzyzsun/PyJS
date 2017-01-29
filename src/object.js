@@ -128,19 +128,20 @@ class PyFunctionObject extends PyObject {
 }
 
 
-objectType.members.set('__str__', self => new PyStrObject('<object>'));
+objectType.members.set('__str__', self => new PyStrObject(`<${self.type.name} object>`));
+objectType.members.set('__repr__', self => self.get('__str__')(self));
 objectType.members.set('__eq__', (self, other) => PyBoolObject(self === other));
-objectType.members.set('__ne__', (self, other) => PyBoolObject(self !== other));
+objectType.members.set('__ne__', (self, other) => PyBoolObject(self.get('__eq__')(self, other) === falseObject));
 
 noneType.members.set('__str__', self => new PyStrObject('None'));
 
 numericType.members.set('__eq__', (self, other) => PyBoolObject(self.value === other.value));
-numericType.members.set('__ne__', (self, other) => PyBoolObject(self.value !== other.value));
 numericType.members.set('__lt__', (self, other) => PyBoolObject(self.value <   other.value));
 numericType.members.set('__le__', (self, other) => PyBoolObject(self.value <=  other.value));
 numericType.members.set('__gt__', (self, other) => PyBoolObject(self.value >   other.value));
 numericType.members.set('__ge__', (self, other) => PyBoolObject(self.value >=  other.value));
 numericType.members.set('__bool__', self => PyBoolObject(self.value !== 0));
+numericType.members.set('__truediv__', (self, other) => new PyFloatObject(self.value / other.value));
 
 intType.members.set('__str__', self => new PyStrObject(self.value.toString()));
 intType.members.set('__pos__', self => new PyIntObject(+self.value));
@@ -150,7 +151,6 @@ intType.members.set('__invert__', self => new PyIntObject(~self.value));
 intType.members.set('__add__', (self, other) => new PyIntObject(self.value + other.value));
 intType.members.set('__sub__', (self, other) => new PyIntObject(self.value - other.value));
 intType.members.set('__mul__', (self, other) => new PyIntObject(self.value * other.value));
-intType.members.set('__truediv__', (self, other) => new PyFloatObject(self.value / other.value));
 intType.members.set('__floordiv__', (self, other) => new PyIntObject(Math.floor(self.value / other.value)));
 intType.members.set('__mod__', (self, other) => new PyIntObject(self.value % other.value));
 intType.members.set('__pow__', (self, other) => new PyIntObject(self.value ** other.value));
@@ -169,14 +169,18 @@ floatType.members.set('__abs__', self => new PyFloatObject(Math.abs(self.value))
 floatType.members.set('__add__', (self, other) => new PyFloatObject(self.value + other.value));
 floatType.members.set('__sub__', (self, other) => new PyFloatObject(self.value - other.value));
 floatType.members.set('__mul__', (self, other) => new PyFloatObject(self.value * other.value));
-floatType.members.set('__truediv__', (self, other) => new PyFloatObject(self.value / other.value));
 floatType.members.set('__floordiv__', (self, other) => new PyFloatObject(Math.floor(self.value / other.value)));
 floatType.members.set('__mod__', (self, other) => new PyFloatObject(self.value % other.value));
 floatType.members.set('__pow__', (self, other) => new PyFloatObject(self.value ** other.value));
 floatType.members.set('is_integer', self => PyBoolObject(self.value % 1 === 0));
 
+strType.members.set('__eq__', (self, other) => PyBoolObject(self.value === other.value));
+strType.members.set('__lt__', (self, other) => PyBoolObject(self.value <   other.value));
+strType.members.set('__le__', (self, other) => PyBoolObject(self.value <=  other.value));
+strType.members.set('__gt__', (self, other) => PyBoolObject(self.value >   other.value));
+strType.members.set('__ge__', (self, other) => PyBoolObject(self.value >=  other.value));
 strType.members.set('__str__', self => new PyStrObject(self.value));
-// strType.members.set('__str__', self => new PyStrObject(`'${self.value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\b/g, '\\b').replace(/\f/g, '\\f').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t').replace(/\v/g, '\\v')}'`));
+strType.members.set('__repr__', self => new PyStrObject(`'${self.value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\f/g, '\\f').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t').replace(/\v/g, '\\v')}'`));
 strType.members.set('__len__', self => new PyIntObject(self.value.length));
 strType.members.set('__getitem__', (self, key) => new PyStrObject(self.value[key.value]));
 strType.members.set('__contains__', (self, value) => PyBoolObject(self.value.includes(value.value)));
@@ -199,7 +203,31 @@ strType.members.set('startswith', (self, prefix) => PyBoolObject(self.value.star
 strType.members.set('strip', self => new PyStrObject(self.value.trim()));
 strType.members.set('upper', self => new PyStrObject(self.value.toUpperCase()));
 
-listType.members.set('__str__', self => new PyStrObject(`[${self.value.map(x => x.get('__str__')(x).value).join(', ')}]`));
+listType.members.set('__eq__', (self, other) => {
+  if (self.value.length !== other.value.length) return falseObject;
+  for (let i = 0; i < self.value.length; i++) {
+    const left  = self.value[i];
+    const right = other.value[i];
+    if (left.get('__eq__')(left, right) === falseObject) return falseObject;
+  }
+  return trueObject;
+});
+listType.members.set('__lt__', (self, other) => {
+  let left, right;
+  for (let i = 0; ; i++) {
+    left  = self.value[i];
+    right = other.value[i];
+    if (left === undefined || right === undefined) break;
+    if (left.get('__eq__')(left, right) === falseObject) break;
+  }
+  if (left === undefined && right !== undefined) return trueObject;
+  else if (left === undefined || right === undefined) return falseObject;
+  else return left.get('__lt__')(left, right);
+});
+listType.members.set('__le__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === falseObject));
+listType.members.set('__gt__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === trueObject));
+listType.members.set('__ge__', (self, other) => PyBoolObject(self.get('__lt__')(self, other) === falseObject));
+listType.members.set('__str__', self => new PyStrObject(`[${self.value.map(x => x.get('__repr__')(x).value).join(', ')}]`));
 listType.members.set('__len__', self => new PyIntObject(self.value.length));
 listType.members.set('__getitem__', (self, key) => self.value[key.value]);
 listType.members.set('__setitem__', (self, key, value) => { self.value[key.value] = value; });
@@ -222,7 +250,14 @@ listType.members.set('sort', self => {
   });
 });
 
-dictType.members.set('__str__', self => new PyStrObject(`{${[...self.value.entries()].map(x => x.map(y => y.get('__str__')(y).value).join(': ')).join(', ')}}`));
+dictType.members.set('__eq__', (self, other) => {
+  if (self.value.size !== other.value.size) return falseObject;
+  for (const [key, value] of self.value) {
+    if (!other.value.has(key) || value.get('__eq__')(value, other.value.get(key)) === falseObject) return falseObject;
+  }
+  return trueObject;
+});
+dictType.members.set('__str__', self => new PyStrObject(`{${[...self.value.entries()].map(x => x.map(y => y.get('__repr__')(y).value).join(': ')).join(', ')}}`));
 dictType.members.set('__len__', self => new PyIntObject(self.value.size));
 dictType.members.set('__getitem__', (self, key) => self.value.get(key));
 dictType.members.set('__setitem__', (self, key, value) => { self.value.set(key, value); });
@@ -246,7 +281,24 @@ dictType.members.set('update', (self, other) => {
   }
 });
 
-setType.members.set('__str__', self => new PyStrObject(`{${[...self.value.values()].map(x => x.get('__str__')(x).value).join(', ')}}`));
+setType.members.set('__eq__', (self, other) => {
+  if (self.value.size !== other.value.size) return falseObject;
+  for (const value of self.value) {
+    if (!other.value.has(value)) return falseObject;
+  }
+  return trueObject;
+});
+setType.members.set('__lt__', (self, other) => {
+  if (self.value.size >= other.value.size) return falseObject;
+  for (const value of self.value) {
+    if (!other.value.has(value)) return falseObject;
+  }
+  return trueObject;
+});
+setType.members.set('__le__', (self, other) => PyBoolObject(self.get('__lt__')(self, other) === trueObject || self.get('__eq__')(self, other) === trueObject));
+setType.members.set('__gt__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === trueObject));
+setType.members.set('__ge__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === trueObject || self.get('__eq__')(self, other) === trueObject));
+setType.members.set('__str__', self => new PyStrObject(`{${[...self.value.values()].map(x => x.get('__repr__')(x).value).join(', ')}}`));
 setType.members.set('__len__', self => new PyIntObject(self.value.size));
 setType.members.set('__contains__', (self, value) => PyBoolObject(self.value.has(value)));
 setType.members.set('add', (self, value) => { self.value.add(value); });
@@ -258,5 +310,5 @@ setType.members.set('discard', (self, value) => { self.value.delete(value); });
 module.exports = {
   PyObject, PyTypeObject, PyFunctionObject,
   PyBuiltinObject, PyIntObject, PyBoolObject, PyFloatObject, PyStrObject, PyListObject, PyDictObject, PySetObject,
-  noneObject, falseObject, trueObject,
+  objectType, noneObject, falseObject, trueObject,
 };

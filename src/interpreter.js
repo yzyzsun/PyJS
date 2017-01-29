@@ -20,7 +20,7 @@ exports.interpreter = {
     const {
       PyObject, PyTypeObject, PyFunctionObject,
       PyBuiltinObject, PyIntObject, PyBoolObject, PyFloatObject, PyStrObject, PyListObject, PyDictObject, PySetObject,
-      noneObject, falseObject, trueObject,
+      objectType, noneObject, falseObject, trueObject,
     } = require('./object');
     const {
       SyntaxError, TypeError, NameError, AttributeError,
@@ -192,12 +192,10 @@ exports.interpreter = {
       case 'is': {
         const left = exec(expr[1]);
         const right = exec(expr[2]);
-        if (left instanceof PyNumericObject && right instanceof PyNumericObject) {
-          return left.value === right.value;
-        } else if (left instanceof PyStrObject && right instanceof PyStrObject) {
-          return left.value === right.value;
+        if (left instanceof PyBuiltinObject && right instanceof PyBuiltinObject) {
+          return PyBoolObject(left.value === right.value);
         } else {
-          return left === right;
+          return PyBoolObject(left === right);
         }
       }
       case 'assign': {
@@ -245,7 +243,8 @@ exports.interpreter = {
           throw new SyntaxError("class cannot be defined inside function");
         }
         const oldObject = object;
-        object = new PyTypeObject(expr[1][1], expr[2].map(x => exec(x)));
+        const bases = expr[2].length > 0 ? expr[2].map(x => exec(x)) : [objectType];
+        object = new PyTypeObject(expr[1][1], bases);
         for (const stmt of expr[3]) exec(stmt);
         oldObject.set(expr[1][1], object);
         object = oldObject;
@@ -324,7 +323,7 @@ exports.interpreter = {
   toString() {
     const display = expr => {
       if (expr instanceof Array) {
-        if (expr.length == 0) return '()';
+        if (expr.length === 0) return '()';
         let car = expr[0] === null ? '' : expr[0] + '';
         const cdr = expr.slice(1);
         switch (car) {
