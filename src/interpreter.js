@@ -169,6 +169,13 @@ exports.interpreter = {
         }
         return trueObject;
       }
+      case 'conditional': {
+        if (exec(expr[1]) === trueObject) {
+          return exec(expr[2]);
+        } else {
+          return exec(expr[3]);
+        }
+      }
       case 'not': {
         const truth = exec(expr[1]);
         return PyBoolObject(truth === falseObject);
@@ -205,38 +212,38 @@ exports.interpreter = {
         return right;
       }
       case 'pass':
-        break;
+        return;
       case 'del':
         exec(expr[1]).delete();
-        break;
+        return;
       case 'return':
         if (object instanceof PyFunctionObject) {
           returnValue = exec(expr[1]);
         } else {
           throw new SyntaxError("'return' outside function");
         }
-        break;
+        return;
       case 'break':
         if (loopFlag) {
           breakFlag = true;
         } else {
           throw new SyntaxError("'break' outside loop");
         }
-        break;
+        return;
       case 'continue':
         if (loopFlag) {
           continueFlag = true;
         } else {
           throw new SyntaxError("'continue' outside loop");
         }
-        break;
+        return;
       case 'def': {
         if (object instanceof PyFunctionObject) {
           throw new SyntaxError("function cannot be defined inside function");
         }
         const func = new PyFunctionObject(expr[1][1], expr[2].map(x => x[1]), expr[3]);
         object.set(expr[1][1], func);
-        break;
+        return;
       }
       case 'class': {
         if (object instanceof PyFunctionObject) {
@@ -248,7 +255,7 @@ exports.interpreter = {
         for (const stmt of expr[3]) exec(stmt);
         oldObject.set(expr[1][1], object);
         object = oldObject;
-        break;
+        return;
       }
       case 'for': {
         const iterator = exec(expr[1]);

@@ -306,10 +306,14 @@ literal
         { $$ = ['NoneType', null]; }
     | '[' expression_list ']'
         { $$ = ['list', $2]; }
+    | '[' ']'
+        { $$ = ['list', []]; }
     | '{' expression_list '}'
         { $$ = ['set', $2]; }
     | '{' key_datum_list '}'
         { $$ = ['dict', $2]; }
+    | '{' '}'
+        { $$ = ['dict', []]; }
     ;
 
 expression_list
