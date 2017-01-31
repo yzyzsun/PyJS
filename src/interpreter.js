@@ -76,9 +76,17 @@ exports.interpreter = {
       case 'list':
         return new PyListObject(expr[1].map(exec));
       case 'dict':
-        return new PyDictObject(new Map(expr[1].map(x => [exec(x[0]), exec(x[1])])));
+        return new PyDictObject(new Map(expr[1].map(x => {
+          const key = exec(x[0]), value = exec(x[1]);
+          require('./object').guardHashable(key);
+          return [key.value, value];
+        })));
       case 'set':
-        return new PySetObject(new Set(expr[1].map(exec)));
+        return new PySetObject(new Set(expr[1].map(x => {
+          const value = exec(x);
+          require('./object').guardHashable(value);
+          return value.value;
+        })));
       case 'NoneType':
         return noneObject;
       case 'attributeref': {
@@ -282,7 +290,7 @@ exports.interpreter = {
         }
         loopFlag = false;
         if (elseFlag) {
-          for (const stmt of expr[3]) exec(stmt);
+          for (const stmt of expr[4]) exec(stmt);
           elseFlag = false;
         }
         return;

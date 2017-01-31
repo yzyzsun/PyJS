@@ -203,7 +203,7 @@ expr
     | expr IS expr
         { $$ = ['is', $1, $3]; }
     | expr IN expr
-        { $$ = call($1, '__contains__', [$3]); }
+        { $$ = call($3, '__contains__', [$1]); }
     | expr '==' expr
         { $$ = call($1, '__eq__', [$3]); }
     | expr '!=' expr

@@ -128,6 +128,29 @@ class PyFunctionObject extends PyObject {
 }
 
 
+function repr(x) {
+  if (typeof x === 'string') {
+    return `'${x.replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/\f/g, '\\f')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r')
+                .replace(/\t/g, '\\t')
+                .replace(/\v/g, '\\v')}'`;
+  } else if (x === null) {
+    return 'None';
+  } else {
+    return x.toString();
+  }
+}
+
+function guardHashable(x) {
+  const TypeError = require('./error').TypeError;
+  const typeName = x.type.name;
+  const hashable = ['NoneType', 'int', 'bool', 'float', 'str'];
+  if (!hashable.includes(typeName)) throw new TypeError(`unhashable type: '${typeName}'`);
+}
+
 objectType.members.set('__str__', self => new PyStrObject(`<${self.type.name} object>`));
 objectType.members.set('__repr__', self => self.get('__str__')(self));
 objectType.members.set('__eq__', (self, other) => PyBoolObject(self === other));
@@ -174,13 +197,13 @@ floatType.members.set('__mod__', (self, other) => new PyFloatObject(self.value %
 floatType.members.set('__pow__', (self, other) => new PyFloatObject(self.value ** other.value));
 floatType.members.set('is_integer', self => PyBoolObject(self.value % 1 === 0));
 
+strType.members.set('__str__', self => new PyStrObject(self.value));
+strType.members.set('__repr__', self => new PyStrObject(repr(self.value)));
 strType.members.set('__eq__', (self, other) => PyBoolObject(self.value === other.value));
 strType.members.set('__lt__', (self, other) => PyBoolObject(self.value <   other.value));
 strType.members.set('__le__', (self, other) => PyBoolObject(self.value <=  other.value));
 strType.members.set('__gt__', (self, other) => PyBoolObject(self.value >   other.value));
 strType.members.set('__ge__', (self, other) => PyBoolObject(self.value >=  other.value));
-strType.members.set('__str__', self => new PyStrObject(self.value));
-strType.members.set('__repr__', self => new PyStrObject(`'${self.value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\f/g, '\\f').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t').replace(/\v/g, '\\v')}'`));
 strType.members.set('__len__', self => new PyIntObject(self.value.length));
 strType.members.set('__getitem__', (self, key) => new PyStrObject(self.value[key.value]));
 strType.members.set('__contains__', (self, value) => PyBoolObject(self.value.includes(value.value)));
@@ -203,6 +226,7 @@ strType.members.set('startswith', (self, prefix) => PyBoolObject(self.value.star
 strType.members.set('strip', self => new PyStrObject(self.value.trim()));
 strType.members.set('upper', self => new PyStrObject(self.value.toUpperCase()));
 
+listType.members.set('__str__', self => new PyStrObject(`[${self.value.map(x => x.get('__repr__')(x).value).join(', ')}]`));
 listType.members.set('__eq__', (self, other) => {
   if (self.value.length !== other.value.length) return falseObject;
   for (let i = 0; i < self.value.length; i++) {
@@ -227,7 +251,6 @@ listType.members.set('__lt__', (self, other) => {
 listType.members.set('__le__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === falseObject));
 listType.members.set('__gt__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === trueObject));
 listType.members.set('__ge__', (self, other) => PyBoolObject(self.get('__lt__')(self, other) === falseObject));
-listType.members.set('__str__', self => new PyStrObject(`[${self.value.map(x => x.get('__repr__')(x).value).join(', ')}]`));
 listType.members.set('__len__', self => new PyIntObject(self.value.length));
 listType.members.set('__getitem__', (self, key) => self.value[key.value]);
 listType.members.set('__setitem__', (self, key, value) => { self.value[key.value] = value; });
@@ -250,6 +273,7 @@ listType.members.set('sort', self => {
   });
 });
 
+dictType.members.set('__str__', self => new PyStrObject(`{${[...self.value.entries()].map(x => `${repr(x[0])}: ${x[1].get('__repr__')(x[1]).value}`).join(', ')}}`));
 dictType.members.set('__eq__', (self, other) => {
   if (self.value.size !== other.value.size) return falseObject;
   for (const [key, value] of self.value) {
@@ -257,30 +281,46 @@ dictType.members.set('__eq__', (self, other) => {
   }
   return trueObject;
 });
-dictType.members.set('__str__', self => new PyStrObject(`{${[...self.value.entries()].map(x => x.map(y => y.get('__repr__')(y).value).join(': ')).join(', ')}}`));
 dictType.members.set('__len__', self => new PyIntObject(self.value.size));
-dictType.members.set('__getitem__', (self, key) => self.value.get(key));
-dictType.members.set('__setitem__', (self, key, value) => { self.value.set(key, value); });
-dictType.members.set('__delitem__', (self, key) => { self.value.delete(key); });
-dictType.members.set('__contains__', (self, value) => PyBoolObject(self.value.has(value)));
+dictType.members.set('__getitem__', (self, key) => {
+  guardHashable(key);
+  return self.value.get(key.value);
+});
+dictType.members.set('__setitem__', (self, key, value) => {
+  guardHashable(key);
+  self.value.set(key.value, value);
+});
+dictType.members.set('__delitem__', (self, key) => {
+  guardHashable(key);
+  self.value.delete(key.value);
+});
+dictType.members.set('__contains__', (self, key) => {
+  guardHashable(key);
+  return PyBoolObject(self.value.has(key.value));
+});
 dictType.members.set('clear', self => { self.value.clear(); });
 dictType.members.set('copy', self => new PyDictObject(new Map(self.value)));
-dictType.members.set('get', (self, key, defaultValue = noneObject) => self.value.has(key) ? self.value.get(key) : defaultValue);
+dictType.members.set('get', (self, key, defaultValue = noneObject) => {
+  guardHashable(key);
+  return self.value.has(key.value) ? self.value.get(key.value) : defaultValue;
+});
 dictType.members.set('pop', (self, key, defaultValue = noneObject) => {
-  if (self.value.has(key)) {
-    const value = self.value.get(key);
-    self.value.delete(key);
+  guardHashable(key);
+  if (self.value.has(key.value)) {
+    const value = self.value.get(key.value);
+    self.value.delete(key.value);
     return value;
   } else {
     return defaultValue;
   }
 });
 dictType.members.set('update', (self, other) => {
-  for (const item of other.value) {
-    self.value.set(item[0], item[1]);
+  for (const [key, value] of other.value) {
+    self.value.set(key, value);
   }
 });
 
+setType.members.set('__str__', self => new PyStrObject(`{${[...self.value.values()].map(x => repr(x)).join(', ')}}`));
 setType.members.set('__eq__', (self, other) => {
   if (self.value.size !== other.value.size) return falseObject;
   for (const value of self.value) {
@@ -298,17 +338,26 @@ setType.members.set('__lt__', (self, other) => {
 setType.members.set('__le__', (self, other) => PyBoolObject(self.get('__lt__')(self, other) === trueObject || self.get('__eq__')(self, other) === trueObject));
 setType.members.set('__gt__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === trueObject));
 setType.members.set('__ge__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === trueObject || self.get('__eq__')(self, other) === trueObject));
-setType.members.set('__str__', self => new PyStrObject(`{${[...self.value.values()].map(x => x.get('__repr__')(x).value).join(', ')}}`));
 setType.members.set('__len__', self => new PyIntObject(self.value.size));
-setType.members.set('__contains__', (self, value) => PyBoolObject(self.value.has(value)));
-setType.members.set('add', (self, value) => { self.value.add(value); });
+setType.members.set('__contains__', (self, value) => {
+  guardHashable(value);
+  return PyBoolObject(self.value.has(value.value));
+});
+setType.members.set('add', (self, value) => {
+  guardHashable(value);
+  self.value.add(value.value);
+});
 setType.members.set('clear', self => { self.value.clear(); });
 setType.members.set('copy', self => new PySetObject(new Set(self.value)));
-setType.members.set('discard', (self, value) => { self.value.delete(value); });
+setType.members.set('discard', (self, value) => {
+  guardHashable(value);
+  self.value.delete(value.value);
+});
 
 
 module.exports = {
   PyObject, PyTypeObject, PyFunctionObject,
   PyBuiltinObject, PyIntObject, PyBoolObject, PyFloatObject, PyStrObject, PyListObject, PyDictObject, PySetObject,
   objectType, noneObject, falseObject, trueObject,
+  guardHashable,
 };
