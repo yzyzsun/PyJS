@@ -32,6 +32,20 @@ class AttributeError {
   }
 }
 
+class IndexError {
+  constructor(message) {
+    this.name = 'IndexError';
+    this.message = message;
+  }
+}
+
+class KeyError {
+  constructor(message) {
+    this.name = 'KeyError';
+    this.message = message;
+  }
+}
+
 module.exports = {
-  SyntaxError, TypeError, NameError, AttributeError,
+  SyntaxError, TypeError, NameError, AttributeError, IndexError, KeyError,
 };

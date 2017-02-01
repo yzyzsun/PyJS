@@ -144,11 +144,28 @@ function repr(x) {
   }
 }
 
+function guardListIndex(list, index) {
+  const { TypeError, IndexError } = require('./error');
+  const typeName = index.type.name;
+  if (typeName !== 'int' && typeName !== 'bool') {
+    throw new TypeError(`list indices must be integers, not ${typeName}`);
+  }
+  if (index.value < 0 || index.value >= list.value.length) {
+    throw new IndexError('list index out of range');
+  }
+}
+
 function guardHashable(x) {
   const TypeError = require('./error').TypeError;
   const typeName = x.type.name;
   const hashable = ['NoneType', 'int', 'bool', 'float', 'str'];
   if (!hashable.includes(typeName)) throw new TypeError(`unhashable type: '${typeName}'`);
+}
+
+function guardDictKey(dict, key) {
+  const KeyError = require('./error').KeyError;
+  guardHashable(key);
+  if (!dict.value.has(key.value)) throw new KeyError('dict key not exists');
 }
 
 objectType.members.set('__str__', self => new PyStrObject(`<${self.type.name} object>`));
@@ -252,9 +269,18 @@ listType.members.set('__le__', (self, other) => PyBoolObject(self.get('__lt__')(
 listType.members.set('__gt__', (self, other) => PyBoolObject(self.get('__lt__')(other, self) === trueObject));
 listType.members.set('__ge__', (self, other) => PyBoolObject(self.get('__lt__')(self, other) === falseObject));
 listType.members.set('__len__', self => new PyIntObject(self.value.length));
-listType.members.set('__getitem__', (self, key) => self.value[key.value]);
-listType.members.set('__setitem__', (self, key, value) => { self.value[key.value] = value; });
-listType.members.set('__delitem__', (self, key) => { self.value.splice(key.value, 1); });
+listType.members.set('__getitem__', (self, key) => {
+  guardListIndex(self, key);
+  return self.value[key.value];
+});
+listType.members.set('__setitem__', (self, key, value) => {
+  guardListIndex(self, key);
+  self.value[key.value] = value;
+});
+listType.members.set('__delitem__', (self, key) => {
+  guardListIndex(self, key);
+  self.value.splice(key.value, 1);
+});
 listType.members.set('__contains__', (self, value) => PyBoolObject(self.value.includes(value)));
 listType.members.set('__add__', (self, other) => new PyListObject(self.value.concat(other.value)));
 listType.members.set('__mul__', (self, other) => new PyListObject([].concat(...(new Array(other.value)).fill(self.value))));
@@ -283,7 +309,7 @@ dictType.members.set('__eq__', (self, other) => {
 });
 dictType.members.set('__len__', self => new PyIntObject(self.value.size));
 dictType.members.set('__getitem__', (self, key) => {
-  guardHashable(key);
+  guardDictKey(self, key);
   return self.value.get(key.value);
 });
 dictType.members.set('__setitem__', (self, key, value) => {
@@ -291,7 +317,7 @@ dictType.members.set('__setitem__', (self, key, value) => {
   self.value.set(key.value, value);
 });
 dictType.members.set('__delitem__', (self, key) => {
-  guardHashable(key);
+  guardDictKey(self, key);
   self.value.delete(key.value);
 });
 dictType.members.set('__contains__', (self, key) => {
