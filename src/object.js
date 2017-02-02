@@ -113,10 +113,8 @@ class PyFunctionObject extends PyObject {
     this.parameters = parameters;
     this.statements = statements;
   }
-  has(identifier) {
-    return this.locals.has(identifier);
-  }
   get(identifier) {
+    if (identifier === '__str__' || identifier === '__repr__') return self => new PyStrObject(`<function ${self.funcname}>`);
     return this.locals.get(identifier);
   }
   set(identifier, value) {
@@ -234,7 +232,7 @@ strType.members.set('isidentifier', self => PyBoolObject(self.value.search(/^[A-
 strType.members.set('islower', self => PyBoolObject(self.value.search(/[^a-z]/) === -1));
 strType.members.set('isspace', self => PyBoolObject(self.value.search(/\S/) === -1));
 strType.members.set('isupper', self => PyBoolObject(self.value.search(/[^A-Z]/) === -1));
-strType.members.set('join', (self, iterable) => new PyStrObject(iterable.value.join(self.value)));
+strType.members.set('join', (self, iterable) => new PyStrObject(iterable.value.map(x => x.get('__str__')(x).value).join(self.value)));
 strType.members.set('lower', self => new PyStrObject(self.value.toLowerCase()));
 strType.members.set('replace', (self, oldValue, newValue) => new PyStrObject(self.value.replace(oldValue.value, newValue.value)));
 strType.members.set('rfind', (self, sub) => new PyIntObject(self.value.lastIndexOf(sub.value)));
@@ -281,7 +279,12 @@ listType.members.set('__delitem__', (self, key) => {
   guardListIndex(self, key);
   self.value.splice(key.value, 1);
 });
-listType.members.set('__contains__', (self, value) => PyBoolObject(self.value.includes(value)));
+listType.members.set('__contains__', (self, value) => {
+  for (const item of self.value) {
+    if (item.get('__eq__')(item, value) === trueObject) return trueObject;
+  }
+  return falseObject;
+});
 listType.members.set('__add__', (self, other) => new PyListObject(self.value.concat(other.value)));
 listType.members.set('__mul__', (self, other) => new PyListObject([].concat(...(new Array(other.value)).fill(self.value))));
 listType.members.set('append', (self, value) => { self.value.push(value); });

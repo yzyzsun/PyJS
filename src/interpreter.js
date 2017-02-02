@@ -45,15 +45,11 @@ exports.interpreter = {
       case 'identifier':
         return {
           get() {
-            if (object.has(expr[1])) {
-              return object.get(expr[1]);
-            } else if (globals.has(expr[1])) {
-              return globals.get(expr[1]);
-            } else if (builtins.has(expr[1])) {
-              return builtins.get(expr[1]);
-            } else {
-              throw new NameError(`name '${expr[1]}' is not defined`);
-            }
+            let ret = object.get(expr[1]);
+            if (ret === undefined) ret = globals.get(expr[1]);
+            if (ret === undefined) ret = builtins.get(expr[1]);
+            if (ret === undefined) throw new NameError(`name '${expr[1]}' is not defined`);
+            return ret;
           },
           set(value) {
             object.set(expr[1], value);
@@ -175,7 +171,7 @@ exports.interpreter = {
         const lenFunc = operand.get('__len__');
         if (lenFunc !== undefined) {
           const len = exec(['call', lenFunc, [operand]]);
-          return PyBoolObject(len !== 0);
+          return PyBoolObject(len.value !== 0);
         }
         return trueObject;
       }
@@ -272,8 +268,7 @@ exports.interpreter = {
         const iterator = exec(expr[1]);
         const iterable = exec(expr[2]);
         let elseFlag = loopFlag = true;
-        if (iterable instanceof PyStrObject || iterable instanceof PyListObject ||
-            iterable instanceof PyDictObject || iterable instanceof PySetObject) {
+        if (iterable instanceof PyStrObject || iterable instanceof PyListObject) {
           for (let item of iterable.value) {
             if (typeof item === 'string') item = new PyStrObject(item);
             else if (item instanceof Array) item = item[0];
