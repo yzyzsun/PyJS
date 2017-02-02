@@ -26,12 +26,19 @@ exports.interpreter = {
       SyntaxError, TypeError, NameError, AttributeError,
     } = require('./error');
     
-    // TODO: form built-in map
-    const builtins = new Map();
-    builtins.set('print', x => this.output += x.get('__str__')(x).value + '\n');
     const globals = new Map();
     let object = globals;
     let returnValue = noneObject;
+    
+    const builtins = require('./builtin').builtins;
+    builtins.set('globals', () => new PyDictObject(globals));
+    builtins.set('locals', () => {
+      console.log(object.locals);
+      if (object instanceof PyFunctionObject) return new PyDictObject(object.locals);
+      else if (object instanceof PyTypeObject) return new PyDictObject(object.members);
+      else return new PyDictObject(object)
+    });
+    builtins.set('print', (...argv) => this.output += argv.map(x => x.get('__str__')(x).value).join(' ') + '\n');
     
     let loopFlag = false;
     let breakFlag = false;
@@ -114,18 +121,20 @@ exports.interpreter = {
           },
         };
       }
-      case 'subscription':
+      case 'subscription': {
+        const call = require('./parser').call;
         return {
           get() {
-            return exec(require('./parser').call(expr[1], '__getitem__', [expr[2]]));
+            return exec(call(expr[1], '__getitem__', [expr[2]]));
           },
           set(value) {
-            return exec(require('./parser').call(expr[1], '__setitem__', [expr[2], value]));
+            return exec(call(expr[1], '__setitem__', [expr[2], value]));
           },
           delete() {
-            return exec(require('./parser').call(expr[1], '__delitem__', [expr[2]]));
+            return exec(call(expr[1], '__delitem__', [expr[2]]));
           },
         };
+      }
       case 'call': {
         let callable = exec(expr[1]);
         let argv = expr[2].map(x => exec(x));
