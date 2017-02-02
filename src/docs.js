@@ -47,22 +47,26 @@ const exampleCode = (id, code) => {
 };
 
 exampleCode('example1',
-`integer_a = 0b11111111
-integer_b = 0o377
-integer_c = 0xff
-integer_d = 255
-print(integer_a)
-print(integer_b)
-print(integer_c)
-print(integer_d)
+`a = 0b11111111
+b = 0o377
+c = 0xff
+d = 255
+print(a, b, c, d)
 
-float_a = -1.50
-float_b = 9e-2
-print(float_a)
-print(float_b)
+e = 9e-2
+f = -1.50
+print(e, f)
 
-string = 'This\\tis a\\ntest of \\\nstring.\\\\'
-print(string)`
+string = 'This\\tis a\\ntest of \\
+string.\\\\'
+print(string)
+
+print(None, True, False)
+
+l = [1, 2, 3, 4]
+d = {1: 2, 3: 4}
+s = {1, 2, 3, 4}
+print(type(l), type(d), type(s))`
 );
 exampleCode('example2',
 `# Arithmetic operation
@@ -78,18 +82,51 @@ print(0x12 << 24 | 0b00110100 << 16 | 0o2547 << 4 | 8)
 print(not (1 < 2 and 3 >= 4 or 5 != 5))
 
 # String concatenation
-print('hello' + ', ' + 'world' + '!' * 3)`
+print('hello' + ',' + 'world' + '!' * 3)
+
+# Comparison
+print(1.0 == True, 'alpha' < 'beta', [2, 3] > [2, 2])
+print({1} == {2}, {1} < {2}, {1} > {2}, {1} < {1, 2})
+
+# Conditional expression
+print('YES' if False else 'NO')`
 );
 exampleCode('example3',
+`# List
+l = [5, 4, 3, 2, 1]
+l[4] = 10
+del l[1]
+l.append(6)
+print(l)
+l.sort()
+l.reverse()
+print(l)
+print(10 in l)
+
+# Dict
+d = {1: 2, 3: 4, 's': 't'}
+d[1] = 10
+d[5] = 6
+del d[3]
+print(d)
+
+# Set
+s = {1, 2, 3}
+s.discard(1)
+s.add(3)
+s.add(4)
+print(s)
+print(2 in s)`
+);
+exampleCode('example4',
 `score = 72
-teacher_angry = False
-if score >= 90 and not teacher_angry:
+if score >= 90:
 	grade = 'A'
-elif score >= 80 and not teacher_angry:
+elif score >= 80:
 	grade = 'B'
-elif score >= 70 and not teacher_angry:
+elif score >= 70:
 	grade = 'C'
-elif score >= 60 and not teacher_angry:
+elif score >= 60:
 	grade = 'D'
 else:
 	grade = 'F'
@@ -97,28 +134,25 @@ print('Grade is ' + grade)
 
 a = 5
 b = 0
-c = 0
 if a == 5:
 	b = 1
-	if b + c == 1:
-		b = 5
-		c = 5
+	if a + b == 6:
+		a = 1
 	else:
-		c = 2
-if a == 5 and b == 5 and c == 5:
+		a = 2
+if a == 1 and b == 1:
 	print('OK')`
 );
-exampleCode('example4',
-`# For loop of list
-number = [1, 2, 3, 4, 5]
-for k in number:
-	print(k)
-print('-------------------------')
+exampleCode('example5',
+`# For loop of str
+for c in 'hi': print(c)
 
-# For loop of str
-for c in 'hello, world':
-	print(c)
-print('-------------------------')
+# For loop of list
+l = [None, 48, 3.14, 'apple', 'pen']
+for i in l: print(i)
+
+# For loop of range
+for i in range(1, 5): print(i)
 
 # While loop
 a = 323
@@ -127,23 +161,34 @@ while b != 0:
 	t = a % b
 	a = b
 	b = t
+else:
+	print('b is zero')
 print(a)`
 );
-exampleCode('example5',
-`# Naïve function
-def f(x): print(x)
-for i in [None, 42, 1.5, 'apple', 'pen']: f(i)
-print('-------------------------')
-
-# Recursion
-def fact(n):
-	if n == 1:
+exampleCode('example6',
+`# Recursion
+def factorial(n):
+	if n == 0:
 		return 1
 	else:
-		return n * fact(n - 1)
-print(fact(5))`
+		return n * factorial(n - 1)
+print(factorial(10))
+
+# Map
+def exp(x): return x ** x
+mapped = map(exp, [1, 2, 3, 4])
+print(mapped)
+
+# Filter
+def odd(x): return x % 2 == 1
+filtered = filter(odd, [1, 2, 3, 4])
+print(filtered)
+
+# Other built-in functions
+print(abs(-1), round(3.8), chr(97), ord('a'), len([1, 2, 3]))
+print(sum([1, 2, 3]), max(1, 2, 3), min(1, 2, 3))`
 );
-exampleCode('example6',
+exampleCode('example7',
 `class Parent:
 	
 	id = 0
@@ -155,24 +200,26 @@ exampleCode('example6',
 	def update(self, num):
 		self.id = self.id + num
 	
-	def get_id(self):
+	def get(self):
 		return self.id
-	
-class Son(Parent):
 
+class Child(Parent):
+	
 	def __init__(self, k):
-		print("I'm son.")
+		print("I'm child.")
 		self.id = k
 	
 	def update(self, num):
 		self.id = self.id * num
 
-a = Parent(5)
-a.update(2)
-print(a.get_id())
+parent = Parent(5)
+parent.update(2)
+print(parent.get())
 
-b = Son(5)
-b.update(2)
-print(b.get_id())`
+child = Child(5)
+child.update(2)
+print(child.get())
+
+print(Child.id)`
 );
 exampleCode('clear', '');

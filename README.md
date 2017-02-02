@@ -20,7 +20,7 @@ interpreter.interpret(source);
 
 ## Specification
 
-PyJS accepts a simplified version of Python 3, but there are also subtle differences between them. It supports the novel features of Python such as indentation levels, `__*__` methods, LGB scoping rules, etc.
+PyJS accepts a simplified version of Python 3, which includes the novel features of Python such as indentation levels, `__*__` methods, LGB scoping rules, etc. It is designed to mimic the behavior of CPython as closely as possible but now there are still many subtle differences between them.
 
 Its supported built-in types include `int`, `float`, `bool`, `str`, `list`, `dict`, `set`, `object` and `NoneType`, together with special types like `function` and `type`. Arithmetic, bitwise and boolean operations, comparisons and conditional expressions (a.k.a. ternary operator) work and their corresponding methods will be respected. For example, the floor division operator `//` will call `__floordiv__()` internally. Simple statements including assignments, `pass`, `del`, `return`, `break`, `continue` and compound statements including `if-elif-else`, `while`, `for`, function and class definitions are also accepted.
 
@@ -32,6 +32,7 @@ For a detailed specification, see [docs/grammar.txt](docs/grammar.txt).
   - `parser.jison`: The grammar file used by [Jison](https://github.com/zaach/jison)
   - `interpreter.js`: The main part of interpretation
   - `object.js`: Python object model
+  - `builtin.js`: Python built-in functions
   - `error.js`: Error definitions used by interpreter
   - `cli.js`: Command line interface
   - `docs.js`: Entry point for webpack, used to generate `docs/bundle.js`
