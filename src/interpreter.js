@@ -34,11 +34,12 @@ exports.interpreter = {
     let returnValue = noneObject;
     
     let loopFlag = false;
-    let elseFlag = false;
     let breakFlag = false;
     let continueFlag = false;
+    let returnFlag = false;
     
     const exec = expr => {
+      if (breakFlag || continueFlag || returnFlag) return;
       if (!(expr instanceof Array)) return expr;
       switch (expr[0]) {
       case 'identifier':
@@ -150,6 +151,7 @@ exports.interpreter = {
           object = oldObject;
           const ret = returnValue;
           returnValue = noneObject;
+          returnFlag = false;
           return ret;
         } else if (callable instanceof PyTypeObject) {
           const obj = new PyObject(callable);
@@ -227,6 +229,7 @@ exports.interpreter = {
       case 'return':
         if (object instanceof PyFunctionObject) {
           returnValue = exec(expr[1]);
+          returnFlag = true;
         } else {
           throw new SyntaxError("'return' outside function");
         }
@@ -268,7 +271,7 @@ exports.interpreter = {
       case 'for': {
         const iterator = exec(expr[1]);
         const iterable = exec(expr[2]);
-        loopFlag = elseFlag = true;
+        let elseFlag = loopFlag = true;
         if (iterable instanceof PyStrObject || iterable instanceof PyListObject ||
             iterable instanceof PyDictObject || iterable instanceof PySetObject) {
           for (let item of iterable.value) {
@@ -289,14 +292,11 @@ exports.interpreter = {
           throw new TypeError(`'${iterable.type.name}' object is not iterable`);
         }
         loopFlag = false;
-        if (elseFlag) {
-          for (const stmt of expr[4]) exec(stmt);
-          elseFlag = false;
-        }
+        if (elseFlag) for (const stmt of expr[4]) exec(stmt);
         return;
       }
-      case 'while':
-        loopFlag = elseFlag = true;
+      case 'while': {
+        let elseFlag = loopFlag = true;
         while (exec(expr[1]) === trueObject) {
           for (const stmt of expr[2]) {
             exec(stmt);
@@ -309,11 +309,9 @@ exports.interpreter = {
           }
         }
         loopFlag = false;
-        if (elseFlag) {
-          for (const stmt of expr[3]) exec(stmt);
-          elseFlag = false;
-        }
+        if (elseFlag) for (const stmt of expr[3]) exec(stmt);
         return;
+      }
       case 'if':
         if (exec(expr[1]) === trueObject) {
           for (const stmt of expr[2]) exec(stmt);
