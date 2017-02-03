@@ -11,8 +11,7 @@
   "main": "src/interpreter.js",
   "bin": "src/cli.js",
   "scripts": {
-    "prepublish": "cd src && jison parser.jison",
-    "build": "npm run prepublish && webpack"
+    "build": "cd src && jison parser.jison && cd .. && webpack"
   },
   "devDependencies": {
     "babel-core": "^6.21.0",

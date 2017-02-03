@@ -9,7 +9,7 @@ require('codemirror/theme/solarized.css');
 
 const CodeMirror = require('codemirror');
 require('codemirror/mode/python/python');
-const interpreter = require('./interpreter').interpreter;
+const interpreter = require('./src/interpreter').interpreter;
 
 const editor = CodeMirror.fromTextArea(document.getElementById('code'), {
   mode: 'python',
@@ -40,7 +40,7 @@ document.getElementById('run').onclick = () => {
   }
 };
 
-document.getElementById('grammar').textContent = require('raw-loader!../docs/grammar.txt');
+document.getElementById('grammar').textContent = require('raw-loader!./docs/grammar.txt');
 
 const exampleCode = (id, code) => {
   document.getElementById(id).onclick = () => editor.setValue(code);
