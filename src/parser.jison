@@ -52,6 +52,11 @@ NEWLINE \n|\r\n?
 
 {ID}    return 'IDENTIFIER';
 
+"**="   return '**=';
+"//="   return '//=';
+"<<="   return '<<=';
+">>="   return '>>=';
+
 "=="    return '==';
 "!="    return '!=';
 "<="    return '<=';
@@ -60,6 +65,14 @@ NEWLINE \n|\r\n?
 "//"    return '//';
 "<<"    return '<<';
 ">>"    return '>>';
+"+="    return '+=';
+"-="    return '-=';
+"*="    return '*=';
+"/="    return '/=';
+"%="    return '%=';
+"&="    return '&=';
+"^="    return '^=';
+"|="    return '|=';
 
 "<"     return '<';
 ">"     return '>';
@@ -171,6 +184,7 @@ stmt_list
 simple_stmt
     : expression_stmt
     | assignment_stmt
+    | augmented_assignment_stmt
     | PASS
         { $$ = ['pass']; }
     | DEL target
@@ -335,6 +349,33 @@ assignment_stmt
         { $$ = ['assign', $1, $3]; }
     | target '=' assignment_stmt
         { $$ = ['assign', $1, $3]; }
+    ;
+
+augmented_assignment_stmt
+    : target '+=' expression
+        { $$ = call(['primary', $1], '__iadd__', [$3]); }
+    | target '-=' expression
+        { $$ = call(['primary', $1], '__isub__', [$3]); }
+    | target '*=' expression
+        { $$ = call(['primary', $1], '__imul__', [$3]); }
+    | target '/=' expression
+        { $$ = call(['primary', $1], '__itruediv__', [$3]); }
+    | target '//=' expression
+        { $$ = call(['primary', $1], '__ifloordiv__', [$3]); }
+    | target '%=' expression
+        { $$ = call(['primary', $1], '__imod__', [$3]); }
+    | target '**=' expression
+        { $$ = call(['primary', $1], '__ipow__', [$3]); }
+    | target '<<=' expression
+        { $$ = call(['primary', $1], '__ilshift__', [$3]); }
+    | target '>>=' expression
+        { $$ = call(['primary', $1], '__irshift__', [$3]); }
+    | target '&=' expression
+        { $$ = call(['primary', $1], '__iand__', [$3]); }
+    | target '^=' expression
+        { $$ = call(['primary', $1], '__ixor__', [$3]); }
+    | target '|=' expression
+        { $$ = call(['primary', $1], '__ior__', [$3]); }
     ;
 
 return_stmt

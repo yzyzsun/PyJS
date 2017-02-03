@@ -132,15 +132,17 @@ else:
 	grade = 'F'
 print('Grade is ' + grade)
 
-a = 5
-b = 0
-if a == 5:
-	b = 1
-	if a + b == 6:
-		a = 1
+a = 10
+b = 10
+if a == b:
+	a += 5
+	b -= 5
+	if a + b == 20:
+		a //= 2
+		b **= 2
 	else:
-		a = 2
-if a == 1 and b == 1:
+		a = b = 0
+if a == 7 and b == 25:
 	print('OK')`
 );
 exampleCode('example5',

@@ -180,6 +180,13 @@ numericType.members.set('__gt__', (self, other) => PyBoolObject(self.value >   o
 numericType.members.set('__ge__', (self, other) => PyBoolObject(self.value >=  other.value));
 numericType.members.set('__bool__', self => PyBoolObject(self.value !== 0));
 numericType.members.set('__truediv__', (self, other) => new PyFloatObject(self.value / other.value));
+numericType.members.set('__iadd__', (self, other) => { self.value += other.value; });
+numericType.members.set('__isub__', (self, other) => { self.value -= other.value; });
+numericType.members.set('__imul__', (self, other) => { self.value *= other.value; });
+numericType.members.set('__itruediv__', (self, other) => { self.value /= other.value; self.type = floatType; });
+numericType.members.set('__ifloordiv__', (self, other) => { self.value =  Math.floor(self.value / other.value); });
+numericType.members.set('__imod__', (self, other) => { self.value %= other.value; });
+numericType.members.set('__ipow__', (self, other) => { self.value **= other.value; });
 
 intType.members.set('__str__', self => new PyStrObject(self.value.toString()));
 intType.members.set('__pos__', self => new PyIntObject(+self.value));
@@ -197,6 +204,11 @@ intType.members.set('__rshift__', (self, other) => new PyIntObject(self.value >>
 intType.members.set('__and__', (self, other) => new PyIntObject(self.value & other.value));
 intType.members.set('__xor__', (self, other) => new PyIntObject(self.value ^ other.value));
 intType.members.set('__or__', (self, other) => new PyIntObject(self.value | other.value));
+intType.members.set('__ilshift__', (self, other) => { self.value <<= other.value; });
+intType.members.set('__irshift__', (self, other) => { self.value >>= other.value; });
+intType.members.set('__iand__', (self, other) => { self.value &= other.value; });
+intType.members.set('__ixor__', (self, other) => { self.value ^= other.value; });
+intType.members.set('__ior__', (self, other) => { self.value |= other.value; });
 
 boolType.members.set('__str__', self => new PyStrObject(self.value ? 'True' : 'False'));
 
@@ -224,6 +236,8 @@ strType.members.set('__getitem__', (self, key) => new PyStrObject(self.value[key
 strType.members.set('__contains__', (self, value) => PyBoolObject(self.value.includes(value.value)));
 strType.members.set('__add__', (self, other) => new PyStrObject(self.value + other.value));
 strType.members.set('__mul__', (self, other) => new PyStrObject(self.value.repeat(other.value)));
+strType.members.set('__iadd__', (self, other) => { self.value += other.value; });
+strType.members.set('__imul__', (self, other) => { self.value = self.value.repeat(other.value); });
 strType.members.set('endswith', (self, suffix) => PyBoolObject(self.value.endsWith(suffix.value)));
 strType.members.set('find', (self, sub) => new PyIntObject(self.value.indexOf(sub.value)));
 strType.members.set('isalpha', self => PyBoolObject(self.value.search(/[^A-Za-z]/) === -1));
@@ -287,6 +301,8 @@ listType.members.set('__contains__', (self, value) => {
 });
 listType.members.set('__add__', (self, other) => new PyListObject(self.value.concat(other.value)));
 listType.members.set('__mul__', (self, other) => new PyListObject([].concat(...(new Array(other.value)).fill(self.value))));
+listType.members.set('__iadd__', (self, other) => { self.value = self.value.concat(other.value); });
+listType.members.set('__imul__', (self, other) => { self.value = [].concat(...(new Array(other.value)).fill(self.value)); });
 listType.members.set('append', (self, value) => { self.value.push(value); });
 listType.members.set('clear', self => { self.value.length = 0; });
 listType.members.set('copy', self => new PyListObject(self.value.slice()));

@@ -9,6 +9,7 @@ stmt_list ::=  simple_stmt (";" simple_stmt)* [;]
 
 simple_stmt ::=  expression_stmt
                  | assignment_stmt
+                 | augmented_assignment_stmt
                  | pass_stmt
                  | del_stmt
                  | return_stmt
@@ -89,6 +90,8 @@ argument_list ::=  expression ("," expression)*
 
 target          ::=  identifier | attributeref | subscription
 assignment_stmt ::=  (target "=")+ expression
+augmented_assignment_stmt ::=  target augop expression
+augop ::=  "+=" | "-=" | "*=" | "/=" | "//=" | "%=" | "**=" | ">>=" | "<<=" | "&=" | "^=" | "|="
 pass_stmt       ::=  "pass"
 del_stmt        ::=  "del" target
 return_stmt     ::=  "return" [expression]
