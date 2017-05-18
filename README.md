@@ -27,7 +27,7 @@ PyJS accepts a simplified version of Python 3, which includes the novel features
 
 Its supported built-in types include `int`, `float`, `bool`, `str`, `list`, `dict`, `set`, `object` and `NoneType`, together with special types like `function` and `type`. Arithmetic, bitwise and boolean operations, comparisons and conditional expressions (a.k.a. ternary operator) work and their corresponding methods will be respected. For example, the floor division operator `//` will call `__floordiv__()` internally. Simple statements including assignments, `pass`, `del`, `return`, `break`, `continue` and compound statements including `if-elif-else`, `while`, `for`, function and class definitions are also accepted.
 
-For a detailed specification, see [docs/grammar.txt](docs/grammar.txt).
+For a detailed specification, see [grammar.txt](grammar.txt).
 
 ## Hierarchy
 
@@ -39,13 +39,10 @@ For a detailed specification, see [docs/grammar.txt](docs/grammar.txt).
   - `builtin.js`: Python built-in functions
   - `error.js`: Error definitions used by interpreter
   - `cli.js`: Command line interface
-- `docs/`: Public directory for GitHub Pages
-- `docs.js`: Entry point for webpack, used to generate `docs/bundle.js`
-- `webpack.config.js`: Webpack configuration file, used to bundle scripts and stylesheets into `docs/bundle.js`
 - `package.json`: NPM / Yarn configuration file
 - `yarn.lock`: Yarn lockfile
 - `.babelrc`: Babel configuration file, used to transcompile ES2015+ to ES5
 
 ## Demo
 
-http://blog.yzyzsun.me/PyJS/
+http://projects.yzyzsun.me/PyJS/
