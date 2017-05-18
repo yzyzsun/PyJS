@@ -94,7 +94,7 @@ builtins.set('sum', new PyFunctionObject('sum', ['iterable'], [
   ['assign', ['identifier', 'iterable'], call('iterable', 'copy')],
   ['assign', ['identifier', 'result'], call('iterable', 'pop', ['int', 0])],
   ['for', ['identifier', 'item'], get('iterable'), [
-    ['assign', ['identifier', 'result'], call('result', '__add__', get('item'))]
+    call('result', '__iadd__', get('item')),
   ], []],
   ['return', get('result')],
 ]));
