@@ -39,10 +39,10 @@ For a detailed specification, see [grammar.txt](grammar.txt).
   - `builtin.js`: Python built-in functions
   - `error.js`: Error definitions used by interpreter
   - `cli.js`: Command line interface
-- `package.json`: NPM / Yarn configuration file
+- `package.json`: NPM / Yarn configuration file (`devDependencies` and `build` script are used to generate the demo page, please ignore them)
 - `yarn.lock`: Yarn lockfile
 - `.babelrc`: Babel configuration file, used to transcompile ES2015+ to ES5
 
 ## Demo
 
-http://projects.yzyzsun.me/PyJS/
+http://projects.yzyzsun.me/pyjs/

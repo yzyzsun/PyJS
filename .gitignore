@@ -86,7 +86,6 @@ Temporary Items
 ### JetBrains ###
 .idea/
 
-### GitHub Pages ###
-gh-pages
-gh-pages.js
+### Demo Page ###
+demo*
 webpack.config.js
