@@ -21,6 +21,8 @@ const source = require('fs').readFileSync('test.py', 'utf8');
 interpreter.interpret(source);
 ```
 
+There is also a pre-built demo page at `demo/index.html`. You can use `npm run build` to re-build `demo/bundle.js`. (Remember to install dev dependencies before that.)
+
 ## Specification
 
 PyJS accepts a simplified version of Python 3, which includes the novel features of Python such as indentation levels, `__*__` methods, LGB scoping rules, etc. It is designed to mimic the behavior of CPython as closely as possible but now there are still many subtle differences between them.
@@ -39,8 +41,10 @@ For a detailed specification, see [grammar.txt](grammar.txt).
   - `builtin.js`: Python built-in functions
   - `error.js`: Error definitions used by interpreter
   - `cli.js`: Command line interface
-- `package.json`: NPM / Yarn configuration file (`devDependencies` and `build` script are used to generate the demo page, please ignore them)
-- `yarn.lock`: Yarn lockfile
+- `package.json`: NPM configuration file
+- `package-lock.json`: NPM lock file
+- `webpack.config.js`: Webpack configuration file, used to bundle scripts and stylesheets into `demo/bundle.js`
+- `demo.js`: Entry point for webpack
 - `.babelrc`: Babel configuration file, used to transcompile ES2015+ to ES5
 
 ## Demo
