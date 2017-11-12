@@ -11,18 +11,20 @@
   "main": "src/interpreter.js",
   "bin": "src/cli.js",
   "scripts": {
-    "build": "cd src && jison parser.jison && cd .. && webpack"
+    "build:jison": "cd src && jison parser.jison",
+    "build:webpack": "webpack",
+    "build": "npm run build:jison && npm run build:webpack"
   },
   "devDependencies": {
-    "babel-core": "^6.21.0",
-    "babel-loader": "^6.2.10",
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.1",
-    "codemirror": "^5.22.0",
-    "css-loader": "^0.26.1",
-    "jison": "^0.4.17",
+    "codemirror": "^5.31.0",
+    "css-loader": "^0.28.7",
+    "jison": "^0.4.18",
     "raw-loader": "^0.5.1",
     "skeleton-css": "^2.0.4",
-    "style-loader": "^0.13.1",
-    "webpack": "^1.14.0"
+    "style-loader": "^0.19.0",
+    "webpack": "^3.8.1"
   }
 }
