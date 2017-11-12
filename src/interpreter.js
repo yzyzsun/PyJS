@@ -23,7 +23,7 @@ exports.interpreter = {
       objectType, noneObject, falseObject, trueObject,
     } = require('./object');
     const {
-      SyntaxError, TypeError, NameError, AttributeError,
+      NameError, AttributeError,
     } = require('./error');
     
     const globals = new Map();

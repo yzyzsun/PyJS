@@ -143,7 +143,7 @@ function repr(x) {
 }
 
 function guardListIndex(list, index) {
-  const { TypeError, IndexError } = require('./error');
+  const { IndexError } = require('./error');
   const typeName = index.type.name;
   if (typeName !== 'int' && typeName !== 'bool') {
     throw new TypeError(`list indices must be integers, not ${typeName}`);
@@ -154,14 +154,13 @@ function guardListIndex(list, index) {
 }
 
 function guardHashable(x) {
-  const TypeError = require('./error').TypeError;
   const typeName = x.type.name;
   const hashable = ['NoneType', 'int', 'bool', 'float', 'str'];
   if (!hashable.includes(typeName)) throw new TypeError(`unhashable type: '${typeName}'`);
 }
 
 function guardDictKey(dict, key) {
-  const KeyError = require('./error').KeyError;
+  const { KeyError } = require('./error');
   guardHashable(key);
   if (!dict.value.has(key.value)) throw new KeyError('dict key not exists');
 }

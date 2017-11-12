@@ -4,48 +4,34 @@
 
 'use strict';
 
-class SyntaxError {
+class NameError extends Error {
   constructor(message) {
-    this.name = 'SyntaxError';
-    this.message = message;
-  }
-}
-
-class TypeError {
-  constructor(message) {
-    this.name = 'TypeError';
-    this.message = message;
-  }
-}
-
-class NameError {
-  constructor(message) {
+    super(message);
     this.name = 'NameError';
-    this.message = message;
   }
 }
 
-class AttributeError {
+class AttributeError extends Error {
   constructor(message) {
+    super(message);
     this.name = 'AttributeError';
-    this.message = message;
   }
 }
 
-class IndexError {
+class IndexError extends Error {
   constructor(message) {
+    super(message);
     this.name = 'IndexError';
-    this.message = message;
   }
 }
 
-class KeyError {
+class KeyError extends Error {
   constructor(message) {
+    super(message);
     this.name = 'KeyError';
-    this.message = message;
   }
 }
 
 module.exports = {
-  SyntaxError, TypeError, NameError, AttributeError, IndexError, KeyError,
+  NameError, AttributeError, IndexError, KeyError,
 };
