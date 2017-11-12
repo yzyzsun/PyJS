@@ -16,7 +16,7 @@
   "devDependencies": {
     "babel-core": "^6.21.0",
     "babel-loader": "^6.2.10",
-    "babel-preset-latest": "^6.16.0",
+    "babel-preset-env": "^1.6.1",
     "codemirror": "^5.22.0",
     "css-loader": "^0.26.1",
     "jison": "^0.4.17",
