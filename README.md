@@ -13,7 +13,7 @@ $ npm install yzyzsun/PyJS
 $ yarn add yzyzsun/PyJS
 ```
 
-Then you can use `./node_modules/.bin/PyJS` to interpret Python code file, which will also generate a Lisp-like syntax tree file in the same directory. You can access the interpreter programmatically from CommonJS module too:
+Then you can use `npx PyJS test.py` to interpret Python code, which will also generate a Lisp-like syntax tree file in the same directory. You can access the interpreter programmatically from CommonJS module too:
 
 ```javascript
 const interpreter = require('PyJS').interpreter;
@@ -49,4 +49,4 @@ For a detailed specification, see [grammar.txt](grammar.txt).
 
 ## Demo
 
-http://projects.yzyzsun.me/pyjs/
+http://dev.yzsun.me/pyjs/
